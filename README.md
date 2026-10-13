@@ -16,7 +16,7 @@ Ce document est le **guide complet d'installation et d'exécution** destiné aux
 | LIMACHE Adrien |
 | MOULAI HACENE Rania |
 | ZAID Ibtissam  |
-| Zheng Caroline  |---
+| ZHENG Caroline  |---
 
 ## 1. Architecture Globale (Phase 0 & 1)
 
