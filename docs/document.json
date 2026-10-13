@@ -1,0 +1,3824 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "version": "1",
+    "title": "Marché du travail",
+    "description": "Accédez aux statistiques de France Travail - Marché du travail. \r\n\r\nCette API vous fournit toutes les données statistiques essentielles de France Travail pour bien évaluer la situation de l'emploi sur un territoire: chiffres des demandeurs d'emploi, offres, embauches.  Elle intègre des indicateurs clés développés par France Travail vous permettant de comprendre les tensions sur les métiers, ainsi que la dynamique globale d'un territoire."
+  },
+  "servers": [
+    {
+      "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+    }
+  ],
+  "paths": {
+    "/v1/indicateur/stat-demandeurs": {
+      "post": {
+        "tags": [
+          "Demandeurs"
+        ],
+        "summary": "Stats des demandeurs d'emploi inscrits en fin de trimestre (DE_1)",
+        "description": "Permet de rechercher les données statistiques sur le Nombre de demandeurs d'emploi inscrits en fin de trimestre par métier et par compétence (DE_1), selon des critères obligatoires (territoire, activité) et facultatifs (catégories de candidats, périodes, caractéristiques).",
+        "operationId": "rechercherStatDemandeurs",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CritereIndicateurAvecNomenclature"
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "codeTypeTerritoire": "REG",
+                    "codeTerritoire": "75",
+                    "codeTypeActivite": "ROME",
+                    "codeActivite": "A1203",
+                    "codeTypePeriode": "TRIMESTRE",
+                    "codeTypeNomenclature": "CATCAND"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Statistiques demandeurs d'emploi trouvées",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Les paramètres en entrée ne sont pas valides"
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/indicateur/stat-demandeurs-entrant": {
+      "post": {
+        "tags": [
+          "Demandeurs"
+        ],
+        "summary": "Stats des demandeurs d'emploi nouveaux inscrits au cours du trimestre et des 12 derniers mois (DE_5)",
+        "description": "Permet de rechercher les données statistiques sur le Nombre de demandeurs d'emploi nouveaux inscrits au cours du trimestre et des 12 derniers mois, par métier (DE_5), selon des critères obligatoires (territoire, activité) et facultatifs (nomenclature, périodes, caractéristiques).",
+        "operationId": "rechercherStatDemandeursEntrants",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CritereIndicateurAvecNomenclature"
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "codeTypeTerritoire": "REG",
+                    "codeTerritoire": "75",
+                    "codeTypeActivite": "ROME",
+                    "codeActivite": "A1203",
+                    "codeTypePeriode": "TRIMESTRE",
+                    "codeTypeNomenclature": "CATCAND"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Statistiques demandeurs d'emploi trouvées",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Les paramètres en entrée ne sont pas valides"
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/indicateur/stat-dynamique-emploi": {
+      "post": {
+        "tags": [
+          "Dynamique Emploi"
+        ],
+        "summary": "Stats sur l'Indicateur global de dynamique de l’emploi sur le territoire sélectionné (DYN_1)",
+        "description": "Permet de rechercher les données statistiques sur l'Indicateur global de dynamique de l’emploi sur le territoire sélectionné (DYN_1), selon des critères obligatoires (territoire, activité) et facultatifs (périodes). Particularités de cet indicateur : pas de caractéristique.",
+        "operationId": "rechercherStatDynamiqueEmploi",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CritereIndicateurSansNomenclature"
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "codeTypeTerritoire": "REG",
+                    "codeTerritoire": "75",
+                    "codeTypeActivite": "MOYENNE",
+                    "codeActivite": "MOYENNE",
+                    "codeTypePeriode": "TRIMESTRE"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Statistiques dynamisme de l'emploi trouvées",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Les paramètres en entrée ne sont pas valides"
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/indicateur/stat-embauches": {
+      "post": {
+        "tags": [
+          "Embauches"
+        ],
+        "summary": "Stats sur les embauches (EMB_1)",
+        "description": "Permet de rechercher les données statistiques sur les Embauches par métier recherché pour les demandeurs d'emploi et par secteur (EMB_1) selon des critères obligatoires (territoire, activité) et facultatifs (Catégories de candidat, durée d’emploi, périodes, caractéristiques).",
+        "operationId": "rechercherStatEmbauches",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CritereIndicateurAvecNomenclature"
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "codeTypeTerritoire": "REG",
+                    "codeTerritoire": "75",
+                    "codeTypeActivite": "ROME",
+                    "codeActivite": "A1203",
+                    "codeTypePeriode": "TRIMESTRE",
+                    "codeTypeNomenclature": "CATCANDxDUREEEMP"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Statistiques sur les embauches trouvées",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Les paramètres en entrée ne sont pas valides"
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/indicateur/stat-offres": {
+      "post": {
+        "tags": [
+          "Offres"
+        ],
+        "summary": "Stats sur les offres d'emploi (OFF_1)",
+        "description": "Permet de rechercher les données statistiques sur les Offres enregistrées au cours du trimestre et des 12 derniers mois par métier, secteur et compétence (OFF_1) selon des critères obligatoires (territoire, activité) et facultatifs (origine des offres, périodes, caractéristiques).",
+        "operationId": "rechercherStatOffres",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CritereIndicateurAvecNomenclature"
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "codeTypeTerritoire": "REG",
+                    "codeTerritoire": "75",
+                    "codeTypeActivite": "ROME",
+                    "codeActivite": "A1203",
+                    "codeTypePeriode": "TRIMESTRE",
+                    "codeTypeNomenclature": "ORIGINEOFF"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Statistiques des offres d'emploi trouvées",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Les paramètres en entrée ne sont pas valides"
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/indicateur/stat-perspective-employeur": {
+      "post": {
+        "tags": [
+          "Perspectives Recrutement"
+        ],
+        "summary": "Stats sur les difficultés de recrutement (indicateur de tension) (PERSP_2)",
+        "description": "Permet de rechercher les données statistiques sur les difficultés de recrutement (indicateur de tension) par métier (PERSP_2), selon des critères obligatoires (territoire, activité) et facultatifs (périodes). Particularités de cet indicateur : pas de caractéristique.",
+        "operationId": "rechercherStatPerspectivesEmployeur",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CritereIndicateurAvecNomenclature"
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "codeTypeTerritoire": "REG",
+                    "codeTerritoire": "75",
+                    "codeTypeActivite": "ROME",
+                    "codeActivite": "A1203",
+                    "codeTypePeriode": "ANNEE",
+                    "codeTypeNomenclature": "TYPE_TENSION"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Statistiques des difficultés de recrutement trouvées",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Les paramètres en entrée ne sont pas valides"
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/indicateur/salaire-rome-fap/{codeTypeTerritoire}/{codeTerritoire}": {
+      "get": {
+        "tags": [
+          "Salaries"
+        ],
+        "summary": "Stats sur les salariés en poste par typologie de salaire (SAL_3)",
+        "description": "Permet de rechercher les données statistiques sur les montants des salaires en poste (SAL_3), selon des critères obligatoires (territoire, ROME).",
+        "operationId": "rechercherStatSalairesParMetier",
+        "parameters": [
+          {
+            "name": "codeRome",
+            "in": "query",
+            "description": "Code ROME",
+            "schema": {
+              "type": "string",
+              "example": "A1101"
+            },
+            "examples": {
+              "default": {
+                "value": "A1101"
+              }
+            }
+          },
+          {
+            "name": "codeTypeTerritoire",
+            "in": "path",
+            "description": "Code du type de territoire",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "NAT"
+            },
+            "examples": {
+              "default": {
+                "value": "NAT"
+              }
+            }
+          },
+          {
+            "name": "codeTerritoire",
+            "in": "path",
+            "description": "Code du territoire",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "FR"
+            },
+            "examples": {
+              "default": {
+                "value": "FR"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistiques salaires en poste trouvées",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicateurRetour"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Les paramètres en entrée ne sont pas valides"
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/activite": {
+      "get": {
+        "tags": [
+          "Activite"
+        ],
+        "summary": "Consulter une activité",
+        "description": "Permet de consulter une activité du Référentiel Smart Emploi selon des critères obligatoires (code type activité et code activité).",
+        "operationId": "recupererActiviteParCodeActiviteEtCodeTypeActivite",
+        "parameters": [
+          {
+            "name": "codeActivite",
+            "in": "query",
+            "description": "codeActivite",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "A1203"
+            },
+            "examples": {
+              "default": {
+                "value": "A1203"
+              }
+            }
+          },
+          {
+            "name": "codeTypeActivite",
+            "in": "query",
+            "description": "codeTypeActivite",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "ROME"
+            },
+            "examples": {
+              "default": {
+                "value": "ROME"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne une activité",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Activite"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Activite"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/activites": {
+      "get": {
+        "tags": [
+          "Activite"
+        ],
+        "summary": "Lister les activités",
+        "description": "Permet de lister les activités du Référentiel Smart Emploi.",
+        "operationId": "recupererListeActivite",
+        "responses": {
+          "200": {
+            "description": "Retourne la liste d'activités",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeActivite"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeActivite"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/activites/{codeTypeActivite}": {
+      "get": {
+        "tags": [
+          "Activite"
+        ],
+        "summary": "Lister les activités pour un type d'activité",
+        "description": "Permet de lister les activités du Référentiel Smart Emploi pour un type d'activité.",
+        "operationId": "recupererListeActiviteParCodeTypeActivite",
+        "parameters": [
+          {
+            "name": "filtreActivite",
+            "in": "query",
+            "description": "filtreActivite",
+            "schema": {
+              "type": "string",
+              "example": "A12"
+            },
+            "examples": {
+              "default": {
+                "value": "A12"
+              }
+            }
+          },
+          {
+            "name": "codeTypeActivite",
+            "in": "path",
+            "description": "codeTypeActivite",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "ROME"
+            },
+            "examples": {
+              "default": {
+                "value": "ROME"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne la liste d'activités",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeActivite"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeActivite"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/type-activites": {
+      "get": {
+        "tags": [
+          "Activite"
+        ],
+        "summary": "Lister les types d'activité",
+        "description": "Permet de lister les types d'activité du Référentiel Smart Emploi.",
+        "operationId": "recupererListeTypeActivite",
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des types d'activités",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTypeActivite"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTypeActivite"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/type-activite/{codeTypeActivite}": {
+      "get": {
+        "tags": [
+          "Activite"
+        ],
+        "summary": "Consulter un type d'activité",
+        "description": "Permet de consulter un type d'activité du Référentiel Smart Emploi.",
+        "operationId": "recupererTypeActiviteParCodeTypeActivite",
+        "parameters": [
+          {
+            "name": "codeTypeActivite",
+            "in": "path",
+            "description": "codeTypeActivite",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "ROME"
+            },
+            "examples": {
+              "default": {
+                "value": "ROME"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne le type d'activité",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypeActivite"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypeActivite"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/caracteristique": {
+      "get": {
+        "tags": [
+          "Caracteristique"
+        ],
+        "summary": "Consulter une caractéristique",
+        "description": "Permet de consulter une caractéristique du Référentiel Smart Emploi selon des critères obligatoires (code type caractéristique et code caractéristique).",
+        "operationId": "recupererCaracteristiqueParCodeCaracteristiqueEtCodeTypeCaracteristique",
+        "parameters": [
+          {
+            "name": "codeCaracteristique",
+            "in": "query",
+            "description": "codeCaracteristique",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "H"
+            },
+            "examples": {
+              "default": {
+                "value": "H"
+              }
+            }
+          },
+          {
+            "name": "codeTypeCaracteristique",
+            "in": "query",
+            "description": "codeTypeCaracteristique",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "GENRE"
+            },
+            "examples": {
+              "default": {
+                "value": "GENRE"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne la caractéristique",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Caracteristique"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Caracteristique"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/caracteristiques": {
+      "get": {
+        "tags": [
+          "Caracteristique"
+        ],
+        "summary": "Lister les caractéristiques",
+        "description": "Permet de lister les caractéristiques du Référentiel Smart Emploi.",
+        "operationId": "recupererListeCaracteristique",
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des caractéristiques",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeCaracteristique"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeCaracteristique"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/caracteristiques/{codeTypeCaracteristique}": {
+      "get": {
+        "tags": [
+          "Caracteristique"
+        ],
+        "summary": "Lister les caractéristiques par type d'activité",
+        "description": "Permet de lister les caractéristiques du Référentiel Smart Emploi pour un type de caractéristique.",
+        "operationId": "recupererListeCaracteristiqueParCodeTypeCaracteristique",
+        "parameters": [
+          {
+            "name": "codeTypeCaracteristique",
+            "in": "path",
+            "description": "codeTypeCaracteristique",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "GENRE"
+            },
+            "examples": {
+              "default": {
+                "value": "GENRE"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des caractéristiques",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeCaracteristique"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeCaracteristique"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/type-caracteristiques": {
+      "get": {
+        "tags": [
+          "Caracteristique"
+        ],
+        "summary": "Lister les types de caractéristique",
+        "description": "Permet de lister les types de caractéristique du Référentiel Smart Emploi.",
+        "operationId": "recupererListeTypeCaracteristique",
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des types de caractéristiques",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTypeCaracteristique"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTypeCaracteristique"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/type-caracteristique/{codeTypeCaracteristique}": {
+      "get": {
+        "tags": [
+          "Caracteristique"
+        ],
+        "summary": "Consulter un type de caractéristique",
+        "description": "Permet de consulter un type de caractéristique du Référentiel Smart Emploi.",
+        "operationId": "recupererTypeCaracteristiqueParCodeTypeCaracteristique",
+        "parameters": [
+          {
+            "name": "codeTypeCaracteristique",
+            "in": "path",
+            "description": "codeTypeCaracteristique",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "GENRE"
+            },
+            "examples": {
+              "default": {
+                "value": "GENRE"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne un type de caractéristique",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypeCaracteristique"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypeCaracteristique"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/details-indicateurs": {
+      "get": {
+        "tags": [
+          "Catalogue Indicateur"
+        ],
+        "summary": "Consulter le détail d'un indicateur.",
+        "description": "Permet de lister toutes les valeurs possibles des critères d’entrée (Types de territoire, Types d'activité, Type de période, Nomenclatures, Croisements disponibles, Caractéristiques), et des Types de valeur obtenus, pour un indicateur donné. Un croisement disponible correspond à une combinaison [Type de territoire, Type d'activité, Type de période et Nomenclature].",
+        "operationId": "recupererDetailsIndicateurs",
+        "parameters": [
+          {
+            "name": "codeFamille",
+            "in": "query",
+            "description": "codeFamille",
+            "schema": {
+              "type": "string",
+              "example": "DEMANDEURS"
+            },
+            "examples": {
+              "default": {
+                "value": "DEMANDEURS"
+              }
+            }
+          },
+          {
+            "name": "codeIndicateur",
+            "in": "query",
+            "description": "codeIndicateur",
+            "schema": {
+              "type": "string",
+              "example": "DE_1"
+            },
+            "examples": {
+              "default": {
+                "value": "DE_1"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Détail d'un indicateur",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeDetailIndicateur"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeDetailIndicateur"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/famille-indicateur/{codeFamilleIndicateur}": {
+      "get": {
+        "tags": [
+          "Catalogue Indicateur"
+        ],
+        "summary": "Consulter une famille d'indicateur",
+        "description": "Permet de lister toutes les valeurs possibles des critères d’entrée (Types de territoire, Types d'activité, Type de période, Nomenclatures, Croisements disponibles, Caractéristiques), et des Types de valeur obtenus, pour une famille d'indicateur donné. Un croisement disponible correspond à une combinaison [Type de territoire, Type d'activité, Type de période et Nomenclature] .",
+        "operationId": "recupererFamilleIndicateurParCodeFamilleIndicateur",
+        "parameters": [
+          {
+            "name": "codeFamilleIndicateur",
+            "in": "path",
+            "description": "codeFamilleIndicateur",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "DEMANDEURS"
+            },
+            "examples": {
+              "default": {
+                "value": "DEMANDEURS"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Détail d'une famille d'indicateur",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeDetailIndicateur"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeDetailIndicateur"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne du serveur"
+          }
+        },
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/familles-indicateurs": {
+      "get": {
+        "tags": [
+          "Catalogue Indicateur"
+        ],
+        "summary": "Lister les familles d'indicateur",
+        "description": "Permet de lister toutes les familles des indicateurs ",
+        "operationId": "recupererListeFamilleIndicateur",
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des familles d'indicateur",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeDetailIndicateur"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeDetailIndicateur"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne du serveur"
+          }
+        },
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/indicateurs": {
+      "get": {
+        "tags": [
+          "Catalogue Indicateur"
+        ],
+        "summary": "Lister les indicateurs",
+        "description": "Permet de lister tous les indicateurs",
+        "operationId": "recupererListeIndicateur",
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des indicateurs",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeDetailIndicateur"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeDetailIndicateur"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne du serveur"
+          }
+        },
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/nomenclatures": {
+      "get": {
+        "tags": [
+          "Nomenclature"
+        ],
+        "summary": "Lister les nomenclatures",
+        "description": "Permet de lister les nomenclatures du Référentiel Smart Emploi.",
+        "operationId": "recupererListeNomenclature",
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des nomenclatures",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeNomenclature"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeNomenclature"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/nomenclatures/{codeTypeNomenclature}": {
+      "get": {
+        "tags": [
+          "Nomenclature"
+        ],
+        "summary": "Lister les nomenclatures par type de nomenclature",
+        "description": "Permet de lister les nomenclatures du Référentiel Smart Emploi pour un type de nomenclature.",
+        "operationId": "recupererListeNomenclatureParCodeTypeNomenclature",
+        "parameters": [
+          {
+            "name": "codeTypeNomenclature",
+            "in": "path",
+            "description": "codeTypeNomenclature",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "CATCAND"
+            },
+            "examples": {
+              "default": {
+                "value": "CATCAND"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des nomenclatures",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeNomenclature"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeNomenclature"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/type-nomenclatures": {
+      "get": {
+        "tags": [
+          "Nomenclature"
+        ],
+        "summary": "Lister les types nomenclatures",
+        "description": "Permet de lister les types de nomenclature du Référentiel Smart Emploi.",
+        "operationId": "recupererListeTypeNomenclature",
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des types nomenclatures",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTypeNomenclature"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTypeNomenclature"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/nomenclature": {
+      "get": {
+        "tags": [
+          "Nomenclature"
+        ],
+        "summary": "Consulter une nomenclature",
+        "description": "Permet de consulter une nomenclature du Référentiel Smart Emploi selon des critères obligatoires (code type nomenclature et code nomenclature).",
+        "operationId": "recupererNomenclatureParCodeNomenclatureEtCodeTypeNomenclature",
+        "parameters": [
+          {
+            "name": "codeNomenclature",
+            "in": "query",
+            "description": "codeNomenclature",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "A"
+            },
+            "examples": {
+              "default": {
+                "value": "A"
+              }
+            }
+          },
+          {
+            "name": "codeTypeNomenclature",
+            "in": "query",
+            "description": "codeTypeNomenclature",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "CATCAND"
+            },
+            "examples": {
+              "default": {
+                "value": "CATCAND"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne la nomenclature",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Nomenclature"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Nomenclature"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/type-nomenclature/{codeTypeNomenclature}": {
+      "get": {
+        "tags": [
+          "Nomenclature"
+        ],
+        "summary": "Consulter un type de nomenclature",
+        "description": "Permet de consulter un type de nomenclature du Référentiel Smart Emploi.",
+        "operationId": "recupererTypeNomenclatureParCodeTypeNomenclature",
+        "parameters": [
+          {
+            "name": "codeTypeNomenclature",
+            "in": "path",
+            "description": "codeTypeNomenclature",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "CATCAND"
+            },
+            "examples": {
+              "default": {
+                "value": "CATCAND"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne le type nomenclature",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypeNomenclature"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypeNomenclature"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/periodes": {
+      "get": {
+        "tags": [
+          "Periode"
+        ],
+        "summary": "Lister les périodes",
+        "description": "Permet de lister les périodes du Référentiel Smart Emploi.",
+        "operationId": "recupererListePeriode",
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des périodes",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListePeriode"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListePeriode"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/periodes/{codeTypePeriode}": {
+      "get": {
+        "tags": [
+          "Periode"
+        ],
+        "summary": "Lister les périodes par type de période",
+        "description": "Permet de lister les périodes du Référentiel Smart Emploi pour un type de période.",
+        "operationId": "recupererListePeriodeParCodeTypePeriode",
+        "parameters": [
+          {
+            "name": "codePeriode",
+            "in": "query",
+            "description": "codePeriode",
+            "schema": {
+              "type": "string",
+              "example": 2019
+            },
+            "examples": {
+              "default": {
+                "value": 2019
+              }
+            }
+          },
+          {
+            "name": "nbPeriode",
+            "in": "query",
+            "description": "nbPeriode",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 5
+            },
+            "examples": {
+              "default": {
+                "value": 5
+              }
+            }
+          },
+          {
+            "name": "critereTemporel",
+            "in": "query",
+            "description": "critereTemporel",
+            "schema": {
+              "type": "string",
+              "example": "A"
+            },
+            "examples": {
+              "default": {
+                "value": "A"
+              }
+            }
+          },
+          {
+            "name": "codeTypePeriode",
+            "in": "path",
+            "description": "codeTypePeriode",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "ANNEE"
+            },
+            "examples": {
+              "default": {
+                "value": "ANNEE"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des périodes",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListePeriode"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListePeriode"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/type-periodes": {
+      "get": {
+        "tags": [
+          "Periode"
+        ],
+        "summary": "Lister les types périodes",
+        "description": "Permet de lister les types de période du Référentiel Smart Emploi.",
+        "operationId": "recupererListeTypePeriode",
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des types de période",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTypePeriode"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTypePeriode"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/periode": {
+      "get": {
+        "tags": [
+          "Periode"
+        ],
+        "summary": "Consulter une période",
+        "description": "Permet de consulter une période du Référentiel Smart Emploi selon des critères obligatoires (code type période et code période).",
+        "operationId": "recupererPeriodeParCodePeriodeEtCodeTypePeriode",
+        "parameters": [
+          {
+            "name": "codePeriode",
+            "in": "query",
+            "description": "codePeriode",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": 2019
+            },
+            "examples": {
+              "default": {
+                "value": 2019
+              }
+            }
+          },
+          {
+            "name": "codeTypePeriode",
+            "in": "query",
+            "description": "codeTypePeriode",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "ANNEE"
+            },
+            "examples": {
+              "default": {
+                "value": "ANNEE"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne la période",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Periode"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Periode"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/type-periode/{codeTypePeriode}": {
+      "get": {
+        "tags": [
+          "Periode"
+        ],
+        "summary": "Consulter un type de période",
+        "description": "Permet de consulter un type de période du Référentiel Smart Emploi.",
+        "operationId": "recupererTypePeriodeParCodeTypePeriode",
+        "parameters": [
+          {
+            "name": "codeTypePeriode",
+            "in": "path",
+            "description": "codeTypePeriode",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "ANNEE"
+            },
+            "examples": {
+              "default": {
+                "value": "ANNEE"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne le type de période",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypePeriode"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypePeriode"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/rechercherActivitesRomeFap": {
+      "get": {
+        "tags": [
+          "RomeFap"
+        ],
+        "summary": "Référentiel des correspondances ROME/FAP",
+        "description": "Permet de rechercher les FAP associées à un code ROME.",
+        "operationId": "recupererListeTypeTerritoire_1",
+        "parameters": [
+          {
+            "name": "codeRome",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne la liste ROME/FAP",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeRomeFap"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeRomeFap"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/territoires": {
+      "get": {
+        "tags": [
+          "Territoire"
+        ],
+        "summary": "Lister les territoires",
+        "description": "Permet de lister les territoires du Référentiel Smart Emploi.",
+        "operationId": "recupererListeTerritoire",
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des territoires",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTerritoire"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTerritoire"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/territoires/{codeTypeTerritoire}": {
+      "get": {
+        "tags": [
+          "Territoire"
+        ],
+        "summary": "Lister les territoires par type de territoire",
+        "description": "Permet de lister les territoires du Référentiel Smart Emploi pour un type de territoire.",
+        "operationId": "recupererListeTerritoireParCodeTypeTerritoire",
+        "parameters": [
+          {
+            "name": "filtreTerritoire",
+            "in": "query",
+            "description": "filtreTerritoire",
+            "schema": {
+              "type": "string",
+              "example": "G"
+            },
+            "examples": {
+              "default": {
+                "value": "G"
+              }
+            }
+          },
+          {
+            "name": "codeTypeTerritoire",
+            "in": "path",
+            "description": "codeTypeTerritoire",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "DEP"
+            },
+            "examples": {
+              "default": {
+                "value": "DEP"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des territoires pour un type",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTerritoire"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTerritoire"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/type-territoires": {
+      "get": {
+        "tags": [
+          "Territoire"
+        ],
+        "summary": "Lister les types de territoire",
+        "description": "Permet de lister les types de territoire du Référentiel Smart Emploi.",
+        "operationId": "recupererListeTypeTerritoire_2",
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des types de territoire",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTypeTerritoire"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTypeTerritoire"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/territoire": {
+      "get": {
+        "tags": [
+          "Territoire"
+        ],
+        "summary": "Consulter un territoire",
+        "description": "Permet de consulter un territoire du Référentiel Smart Emploi selon des critères obligatoires (code type territoire et code territoire).",
+        "operationId": "recupererTerritoireParCodeTerritoireEtCodeTypeTerritoire",
+        "parameters": [
+          {
+            "name": "codeTerritoire",
+            "in": "query",
+            "description": "codeTerritoire",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": 33
+            },
+            "examples": {
+              "default": {
+                "value": 33
+              }
+            }
+          },
+          {
+            "name": "codeTypeTerritoire",
+            "in": "query",
+            "description": "codeTypeTerritoire",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "DEP"
+            },
+            "examples": {
+              "default": {
+                "value": "DEP"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne le territoire",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Territoire"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Territoire"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/territoires-communes/{codeTypeTerritoire}": {
+      "get": {
+        "tags": [
+          "Territoire"
+        ],
+        "summary": "Lister les communes avec Bassin et EPCI",
+        "description": "Permet de lister les territoires communes",
+        "operationId": "recupererTerritoireParCodeTypeAvecCommuneBassinEtEPCI",
+        "parameters": [
+          {
+            "name": "filtreTerritoire",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "codeTypeTerritoire",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne la liste des territoires Communes",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTerritoireCommune"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeTerritoireCommune"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne du serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    },
+    "/v1/referentiel/type-territoire/{codeTypeTerritoire}": {
+      "get": {
+        "tags": [
+          "Territoire"
+        ],
+        "summary": "Consulter un type de territoire",
+        "description": "Permet de consulter un type de territoire du Référentiel Smart Emploi.",
+        "operationId": "recupererTypeTerritoireParCodeTypeTerritoire",
+        "parameters": [
+          {
+            "name": "codeTypeTerritoire",
+            "in": "path",
+            "description": "codeTypeTerritoire",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "DEP"
+            },
+            "examples": {
+              "default": {
+                "value": "DEP"
+              }
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Bearer "
+            },
+            "description": "Token d'authentification Bearer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retourne le type de territoire",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypeTerritoire"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypeTerritoire"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne au serveur"
+          }
+        },
+        "security": [
+          {
+            "authentification_partenaire": [
+              "offresetdemandesemploi",
+              "api_stats-offres-demandes-emploiv1"
+            ]
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi"
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CritereIndicateurAvecNomenclature": {
+        "type": "object",
+        "properties": {
+          "codeTypeTerritoire": {
+            "type": "string",
+            "description": "Le type de territoire (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "DEP"
+          },
+          "codeTerritoire": {
+            "type": "string",
+            "description": "Le code du territoire (voir le référentiel Territoire pour les codes disponibles)",
+            "example": "33"
+          },
+          "codeTypeActivite": {
+            "type": "string",
+            "description": "Le type d'activité (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "ROME"
+          },
+          "codeActivite": {
+            "type": "string",
+            "description": "Le code d'activité (voir le référentiel Activite pour les codes disponibles)",
+            "example": "K1303"
+          },
+          "codeTypePeriode": {
+            "type": "string",
+            "description": "Le type de période (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "TRIMESTRE"
+          },
+          "codeTypeNomenclature": {
+            "type": "string",
+            "description": "Le type de nomenclature (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "CATCAND"
+          },
+          "dernierePeriode": {
+            "type": "boolean",
+            "description": "Optionnel: A renseigner à true pour que la recherche se limite à la période la plus récente sur cet indicateur, sinon la recherche se limite à la liste de périodes fournie en entrée"
+          },
+          "listeCodePeriode": {
+            "type": "array",
+            "description": "Optionnel: A renseigner avec les périodes souhaitées, sinon la recherche est réalisée sur toutes les périodes disponibles sur cet indicateur",
+            "items": {
+              "type": "string",
+              "description": "Optionnel: A renseigner avec les périodes souhaitées, sinon la recherche est réalisée sur toutes les périodes disponibles sur cet indicateur",
+              "example": "[\"2020T2\",\"2020T3\"]"
+            },
+            "example": [
+              "2020T2",
+              "2020T3"
+            ]
+          },
+          "listeCodeNomenclature": {
+            "type": "array",
+            "description": "Optionnel: A renseigner avec les nomenclatures souhaitées, sinon la recherche est réalisée sur toutes les nomenclatures disponibles sur cet indicateur",
+            "items": {
+              "type": "string",
+              "description": "Optionnel: A renseigner avec les nomenclatures souhaitées, sinon la recherche est réalisée sur toutes les nomenclatures disponibles sur cet indicateur",
+              "example": "[\"A\",\"B\",\"C\"]"
+            },
+            "example": [
+              "A",
+              "B",
+              "C"
+            ]
+          },
+          "sansCaracteristiques": {
+            "type": "boolean",
+            "description": "Optionnel: A renseigner à true pour que la recherche se limite aux valeurs hors caractéristiques sur cet indicateur, sinon la recherche se limite aux valeurs de la liste de caractéristiques fournie en entrée"
+          },
+          "listeCaracteristiques": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Caracteristique"
+            }
+          }
+        },
+        "required": [
+          "codeTypeTerritoire",
+          "codeTerritoire",
+          "codeTypeActivite",
+          "codeActivite",
+          "codeTypePeriode",
+          "codeTypeNomenclature"
+        ]
+      },
+      "Caracteristique": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour de la caractéristique",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeCaracteristique": {
+            "type": "string",
+            "description": "Le code du type de la caractéristique",
+            "example": "AGC_RAT"
+          },
+          "codeCaracteristique": {
+            "type": "string",
+            "description": "Le code de la caractéristique",
+            "example": "AGC_BASS"
+          },
+          "libelleCaracteristique": {
+            "type": "string",
+            "description": "Le libellé de la caractéristique",
+            "example": "rattachement agence bassin"
+          },
+          "masque": {
+            "type": "boolean",
+            "description": "La caractéristique est masqué par l'administrateur",
+            "example": true
+          }
+        },
+        "required": [
+          "codeTypeCaracteristique",
+          "codeCaracteristique",
+          "libelleCaracteristique"
+        ],
+        "xml": {
+          "name": "CaracteristiqueReferentiel",
+          "namespace": "http://fr.pe.auto.service.da084.services.rest.model.referentiel"
+        }
+      },
+      "IndicateurRetour": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour de l'indicateur",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeIndicateur": {
+            "type": "string",
+            "description": "Le code de l'indicateur",
+            "example": "DE_1"
+          },
+          "codeFamille": {
+            "type": "string",
+            "description": "Le code famille de l'indicateur",
+            "example": "DEMANDEURS"
+          },
+          "libIndicateur": {
+            "type": "string",
+            "description": "Le libellé de l'indicateur",
+            "example": "Nombre et % de DE par catégories x caractéristiques, % par activités (Rome, Compétence)"
+          },
+          "libTerritoire": {
+            "type": "string",
+            "description": "Le libellé du territoire",
+            "example": "NOUVELLE-AQUITAINE"
+          },
+          "listeValeursParPeriode": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValeursParPeriode"
+            }
+          }
+        }
+      },
+      "ValeursParPeriode": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour de la valeur",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeTerritoire": {
+            "type": "string",
+            "description": "Le code du type de territoire",
+            "example": "REG"
+          },
+          "codeTerritoire": {
+            "type": "string",
+            "description": "Le code territoire",
+            "example": "75"
+          },
+          "libTerritoire": {
+            "type": "string",
+            "description": "Le libellé du territoire",
+            "example": "NOUVELLE-AQUITAINE"
+          },
+          "codeTypeActivite": {
+            "type": "string",
+            "description": "Le code du type d'activité",
+            "example": "ROME"
+          },
+          "codeActivite": {
+            "type": "string",
+            "description": "Le code d'activité",
+            "example": "A1203"
+          },
+          "libActivite": {
+            "type": "string",
+            "description": "Le libellé de l'activité",
+            "example": "Aménagement et entretien des espaces verts"
+          },
+          "codeNomenclature": {
+            "type": "string",
+            "description": "Le code de nomenclature",
+            "example": "A"
+          },
+          "libNomenclature": {
+            "type": "string",
+            "description": "Le libellé de nomenclature",
+            "example": "Demandeurs d'Emploi de catégorie A"
+          },
+          "codeTypePeriode": {
+            "type": "string",
+            "description": "Le code du type de période",
+            "example": "TRIMESTRE"
+          },
+          "codePeriode": {
+            "type": "string",
+            "description": "Le code de la période",
+            "example": "2023T4"
+          },
+          "libPeriode": {
+            "type": "string",
+            "description": "Le libellé de la période",
+            "example": "4ème trimestre 2023"
+          },
+          "valeurPrincipaleNom": {
+            "type": "string",
+            "description": "Le nom de la valeur principale",
+            "example": "Nombre de demandeurs d'emploi"
+          },
+          "valeurPrincipaleNombre": {
+            "type": "integer",
+            "description": "La valeur principale",
+            "format": "int32",
+            "example": 4750
+          },
+          "valeurPrincipaleRang": {
+            "type": "integer",
+            "description": "La valeur principale si l'indicateur représente un rang",
+            "format": "int32",
+            "example": 4
+          },
+          "valeurPrincipaleMontant": {
+            "type": "number",
+            "description": "La valeur principale si l'indicateur représente un montant",
+            "format": "double",
+            "example": 55.5
+          },
+          "valeurPrincipaleTaux": {
+            "type": "number",
+            "description": "La valeur principale si l'indicateur représente un taux",
+            "format": "double",
+            "example": 10
+          },
+          "valeurSecondaireNombre": {
+            "type": "integer",
+            "description": "La valeur secondaire",
+            "format": "int32",
+            "example": 4750
+          },
+          "valeurSecondairePourcentage": {
+            "type": "number",
+            "description": "La valeur secondaire en pourcentage",
+            "format": "double",
+            "example": 54
+          },
+          "valeurSecondairePourcentage2": {
+            "type": "number",
+            "description": "La valeur secondaire en pourcentage",
+            "format": "double",
+            "example": 54
+          },
+          "valeurSecondaireTaux": {
+            "type": "number",
+            "description": "La valeur secondaire si l'indicateur représente un taux",
+            "format": "double",
+            "example": 10
+          },
+          "libPctParActivite": {
+            "type": "string",
+            "description": "Le libellé du pourcentage par activité",
+            "example": "Pourcentage de demandeurs d'emploi par activité"
+          },
+          "listeValeurParCaract": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValeursParCaracteristique"
+            }
+          }
+        }
+      },
+      "ValeursParCaracteristique": {
+        "type": "object",
+        "properties": {
+          "codeTypeCaract": {
+            "type": "string",
+            "description": "La code du type de la caractéristique",
+            "example": "GENRE"
+          },
+          "codeCaract": {
+            "type": "string",
+            "description": "La code de la caractéristique",
+            "example": "H"
+          },
+          "libCaract": {
+            "type": "string",
+            "description": "Le libellé de la caractéristique",
+            "example": "Homme"
+          },
+          "nombre": {
+            "type": "integer",
+            "description": "La valeur de la caractéristique",
+            "format": "int32",
+            "example": 4470
+          },
+          "pourcentage": {
+            "type": "number",
+            "description": "Le pourcentage de la caractéristique",
+            "format": "double",
+            "example": 94
+          },
+          "montant": {
+            "type": "number",
+            "description": "Le montant (s'il existe) de la caractéristique",
+            "format": "double",
+            "example": 10
+          },
+          "taux": {
+            "type": "number",
+            "description": "Le taux (s'il existe) de la caractéristique",
+            "format": "double",
+            "example": 10
+          }
+        }
+      },
+      "CritereIndicateurSansNomenclature": {
+        "type": "object",
+        "properties": {
+          "codeTypeTerritoire": {
+            "type": "string",
+            "description": "Le type de territoire (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "DEP"
+          },
+          "codeTerritoire": {
+            "type": "string",
+            "description": "Le code du territoire (voir le référentiel Territoire pour les codes disponibles)",
+            "example": "33"
+          },
+          "codeTypeActivite": {
+            "type": "string",
+            "description": "Le type d'activité (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "ROME"
+          },
+          "codeActivite": {
+            "type": "string",
+            "description": "Le code d'activité (voir le référentiel Activite pour les codes disponibles)",
+            "example": "K1303"
+          },
+          "codeTypePeriode": {
+            "type": "string",
+            "description": "Le type de période (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "TRIMESTRE"
+          },
+          "dernierePeriode": {
+            "type": "boolean",
+            "description": "Optionnel: A renseigner à true pour que la recherche se limite à la période la plus récente sur cet indicateur, sinon la recherche se limite à la liste de périodes fournie en entrée"
+          },
+          "listeCodePeriode": {
+            "type": "array",
+            "description": "Optionnel: A renseigner avec les périodes souhaitées, sinon la recherche est réalisée sur toutes les périodes disponibles sur cet indicateur",
+            "items": {
+              "type": "string",
+              "description": "Optionnel: A renseigner avec les périodes souhaitées, sinon la recherche est réalisée sur toutes les périodes disponibles sur cet indicateur",
+              "example": "[\"2020T2\",\"2020T3\"]"
+            },
+            "example": [
+              "2020T2",
+              "2020T3"
+            ]
+          },
+          "sansCaracteristiques": {
+            "type": "boolean",
+            "description": "Optionnel: A renseigner à true pour que la recherche se limite aux valeurs hors caractéristiques sur cet indicateur, sinon la recherche se limite aux valeurs de la liste de caractéristiques fournie en entrée"
+          },
+          "listeCaracteristiques": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Caracteristique"
+            }
+          }
+        },
+        "required": [
+          "codeTypeTerritoire",
+          "codeTerritoire",
+          "codeTypeActivite",
+          "codeActivite",
+          "codeTypePeriode"
+        ]
+      },
+      "Activite": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour de l'activité",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeActivite": {
+            "type": "string",
+            "description": "Le type d'activité (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "ROME"
+          },
+          "codeActivite": {
+            "type": "string",
+            "description": "Le code d'activité (voir le référentiel Activite pour les codes disponibles)",
+            "example": "K1303"
+          },
+          "libelleActivite": {
+            "type": "string",
+            "description": "Le libellé de l'activité",
+            "example": "Ouvriers qualifiés de l'électricité et de l'électronique"
+          },
+          "attribut": {
+            "type": "string",
+            "description": "Optionnel: le code NSF de l'activité",
+            "example": "114"
+          }
+        },
+        "required": [
+          "codeTypeActivite",
+          "codeActivite",
+          "libelleActivite"
+        ]
+      },
+      "ListeActivite": {
+        "type": "object",
+        "properties": {
+          "activites": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Activite"
+            }
+          }
+        }
+      },
+      "ListeTypeActivite": {
+        "type": "object",
+        "properties": {
+          "typeActivites": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypeActivite"
+            }
+          }
+        }
+      },
+      "TypeActivite": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour du type d'activité",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeActivite": {
+            "type": "string",
+            "description": "Le code du type d'activité",
+            "example": "ROME"
+          },
+          "libelleTypeActivite": {
+            "type": "string",
+            "description": "Le libellé du type d'activité",
+            "example": "Métier (ROME)"
+          }
+        }
+      },
+      "ListeCaracteristique": {
+        "type": "object",
+        "properties": {
+          "caracteristiques": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Caracteristique"
+            }
+          }
+        }
+      },
+      "ListeTypeCaracteristique": {
+        "type": "object",
+        "properties": {
+          "typeCaracteristiques": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypeCaracteristique"
+            }
+          }
+        }
+      },
+      "TypeCaracteristique": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour du type",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeCaracteristique": {
+            "type": "string",
+            "description": "Le code du type de la caractéristique",
+            "example": "AGC_RAT"
+          },
+          "libelleTypeCaracteristique": {
+            "type": "string",
+            "description": "Le libellé du type de la caractéristique",
+            "example": "Territoire de rattachement de l'offre à l'agence"
+          }
+        }
+      },
+      "ListeDetailIndicateur": {
+        "type": "object",
+        "properties": {
+          "listeIndicateurs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DetailIndicateur"
+            }
+          }
+        }
+      },
+      "DetailIndicateur": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour de l'indicateur",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeIndicateur": {
+            "type": "string",
+            "description": "Le code de l'indicateur",
+            "example": "DE_1"
+          },
+          "libelleIndicateur": {
+            "type": "string",
+            "description": "Le libellé de l'indicateur",
+            "example": "Nombre et % de DE par catégories x caractéristiques, % par activités (Rome, Compétence)"
+          },
+          "descriptif": {
+            "type": "string",
+            "description": "Le descriptif de l'indicateur",
+            "example": "Définition détaillée : informations sur les sources de données utilisées, les méthodes de calcul, les limitations sur certains axes, les aspects réglementaires éventuels."
+          },
+          "codeFamille": {
+            "type": "string",
+            "description": "Le code famille de l'indicateur",
+            "example": "DEMANDEURS"
+          },
+          "disponibiliteIndicateur": {
+            "type": "integer",
+            "description": "Indique si l'indicateur est disponible (1) ou désactivé (0)",
+            "format": "int32",
+            "example": 1
+          },
+          "listeTypesValeurs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypeValeur"
+            }
+          },
+          "listeTypesTerritoiresIndicateur": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypeTerritoire"
+            }
+          },
+          "listeTypesActivitesIndicateur": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypeActivite"
+            }
+          },
+          "listeTypesPeriodesIndicateur": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypePeriodeIndicateur"
+            }
+          },
+          "listeTypesNomenclaturesIndicateur": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypeNomenclatureIndicateur"
+            }
+          },
+          "listeCroisementsIndicateur": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CroisementIndicateur"
+            }
+          },
+          "listeCaracteristiqueIndicateur": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CaracteristiqueIndicateur"
+            }
+          },
+          "listeTypesCracteristiqueIndicateur": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypeCaracteristique"
+            }
+          }
+        }
+      },
+      "TypeValeur": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour du type de valeur",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "valeurPrincipale": {
+            "type": "string",
+            "description": "La valeur principale",
+            "example": "0"
+          },
+          "codeTypeValeur": {
+            "type": "string",
+            "description": "Le code du type de valeur",
+            "example": "NB_ET_PCT"
+          },
+          "numOrdre": {
+            "type": "integer",
+            "description": "Le numéro d'ordre de la valeur",
+            "format": "int32",
+            "example": 1
+          },
+          "libValeur": {
+            "type": "string",
+            "description": "Le libellé du type de valeur",
+            "example": "Nombre et % de répartition de ce nombre par caractéristiques."
+          },
+          "libelleValeurSpecifique": {
+            "type": "string",
+            "description": "Le libellé spécifique de la valeur",
+            "example": "Nombre et % des retours à l'emploi AB par durée d'emploi et caractéristiques"
+          }
+        }
+      },
+      "TypeTerritoire": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour du type de territoire",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeTerritoire": {
+            "type": "string",
+            "description": "Le code du type de territoire",
+            "example": "DEP"
+          },
+          "libelleTypeTerritoire": {
+            "type": "string",
+            "description": "Le libellé du type de territoire",
+            "example": "Département"
+          }
+        }
+      },
+      "TypePeriodeIndicateur": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour du type de période de l'indicateur",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypePeriode": {
+            "type": "string",
+            "description": "Le code du type de période",
+            "example": "TRIMESTRE"
+          },
+          "libelleTypePeriode": {
+            "type": "string",
+            "description": "Le libellé du type de période",
+            "example": "Trimestre"
+          },
+          "profondeurMax": {
+            "type": "string",
+            "description": "Nombre maximum de période interrogeable pour ce type",
+            "example": "12"
+          }
+        }
+      },
+      "TypeNomenclatureIndicateur": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour du type de nomenclature de l'indicateur",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeNomenclature": {
+            "type": "string",
+            "description": "Le code du type de nomenclature de l'indicateur",
+            "example": "DUREEEMP"
+          },
+          "libelleTypeNomenclature": {
+            "type": "string",
+            "description": "Le libellé du type de nomenclature de l'indicateur",
+            "example": "Durée d'emploi > 1  mois, emploi durable (> 6 mois), Toutes durées)"
+          },
+          "listeValeursNomenclaturesIndicateur": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValeurNomenclatureIndicateur"
+            }
+          }
+        }
+      },
+      "ValeurNomenclatureIndicateur": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour de la valeur de la nomenclature",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "valeurNomenclature": {
+            "type": "string",
+            "description": "La valeur de la nomenclature",
+            "example": "SUP1M"
+          },
+          "libelleNomenclature": {
+            "type": "string",
+            "description": "La libellé de la nomenclature",
+            "example": "Emploi > 1 mois"
+          }
+        }
+      },
+      "CroisementIndicateur": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour du croisement de l'indicateur",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeTerritoire": {
+            "type": "string",
+            "description": "Le type de territoire (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "DEP"
+          },
+          "codeTypeActivite": {
+            "type": "string",
+            "description": "Le type d'activité (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "ROME"
+          },
+          "codeTypePeriode": {
+            "type": "string",
+            "description": "Le type de période (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "TRIMESTRE"
+          },
+          "codeTypeNomenclature": {
+            "type": "string",
+            "description": "Le type de nomenclature (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "CATCAND"
+          },
+          "codeNomenclature": {
+            "type": "string",
+            "description": "Le code de nomenclature",
+            "example": "A"
+          }
+        }
+      },
+      "CaracteristiqueIndicateur": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour de la caractéristique de l'indicateur",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeCaracteristique": {
+            "type": "string",
+            "description": "Le code du type de la caractéristique",
+            "example": "GENRE"
+          },
+          "codeCaracteristique": {
+            "type": "string",
+            "description": "Le code de la caractéristique",
+            "example": "H"
+          },
+          "libelleCaracteristique": {
+            "type": "string",
+            "description": "Le libellé de la caractéristique",
+            "example": "Homme"
+          }
+        },
+        "required": [
+          "codeTypeCaracteristique",
+          "codeCaracteristique",
+          "libelleCaracteristique"
+        ]
+      },
+      "ListeNomenclature": {
+        "type": "object",
+        "properties": {
+          "nomenclatures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Nomenclature"
+            }
+          }
+        }
+      },
+      "Nomenclature": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour de la nomenclature",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeNomenclature": {
+            "type": "string",
+            "description": "Le code du type de nomenclature",
+            "example": "ACCESEMP"
+          },
+          "codeNomenclature": {
+            "type": "string",
+            "description": "Le code de la nomenclature",
+            "example": "12M"
+          },
+          "libelleNomenclature": {
+            "type": "string",
+            "description": "Le libellé de la nomenclature",
+            "example": "12 Mois"
+          }
+        }
+      },
+      "ListeTypeNomenclature": {
+        "type": "object",
+        "properties": {
+          "typeNomenclatures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypeNomenclature"
+            }
+          }
+        }
+      },
+      "TypeNomenclature": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour du type de nomenclature",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeNomenclature": {
+            "type": "string",
+            "description": "Le code du type de nomenclature",
+            "example": "ACCESEMP"
+          },
+          "libelleTypeNomenclature": {
+            "type": "string",
+            "description": "Le libellé du type de nomenclature",
+            "example": "Délai d'accès à l'emploi (6 mois / 12 mois)"
+          }
+        }
+      },
+      "ListePeriode": {
+        "type": "object",
+        "properties": {
+          "periodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Periode"
+            }
+          }
+        }
+      },
+      "Periode": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour de la période",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypePeriode": {
+            "type": "string",
+            "description": "Le code du type de période",
+            "example": "TRIMESTRE"
+          },
+          "codePeriode": {
+            "type": "string",
+            "description": "Le code de la période",
+            "example": "2023T1"
+          },
+          "ordrePeriode": {
+            "type": "integer",
+            "description": "Ordre de la période",
+            "format": "int32",
+            "example": 1
+          },
+          "libellePeriode": {
+            "type": "string",
+            "description": "Libellé de la période",
+            "example": "1er trimestre 2023"
+          }
+        },
+        "required": [
+          "codeTypePeriode",
+          "codePeriode",
+          "ordrePeriode",
+          "libellePeriode"
+        ]
+      },
+      "ListeTypePeriode": {
+        "type": "object",
+        "properties": {
+          "typePeriodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypePeriode"
+            }
+          }
+        }
+      },
+      "TypePeriode": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour du type de période",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypePeriode": {
+            "type": "string",
+            "description": "Le code du type de période",
+            "example": "TRIMESTRE"
+          },
+          "libelleTypePeriode": {
+            "type": "string",
+            "description": "Le libellé du type de période",
+            "example": "Trimestre"
+          }
+        },
+        "required": [
+          "codeTypePeriode",
+          "libelleTypePeriode"
+        ]
+      },
+      "ListeRomeFap": {
+        "type": "object",
+        "properties": {
+          "romeFapList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RomeFap"
+            }
+          }
+        }
+      },
+      "RomeFap": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour du couple",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeRome": {
+            "type": "string",
+            "description": "Le code ROME",
+            "example": "M1801"
+          },
+          "codeFap": {
+            "type": "string",
+            "description": "Le code FAP",
+            "example": "M0Z60"
+          }
+        }
+      },
+      "ListeTerritoire": {
+        "type": "object",
+        "properties": {
+          "territoires": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Territoire"
+            }
+          }
+        }
+      },
+      "Territoire": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour du territoire",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeTerritoire": {
+            "type": "string",
+            "description": "Le type de territoire (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "DEP"
+          },
+          "codeTerritoire": {
+            "type": "string",
+            "description": "Le code du territoire (voir le référentiel Territoire pour les codes disponibles)",
+            "example": "33"
+          },
+          "libelleTerritoire": {
+            "type": "string",
+            "description": "Le libellé du territoire",
+            "example": "GIRONDE"
+          },
+          "codeTypeTerritoireParent": {
+            "type": "string",
+            "description": "Le code type du territoire parent",
+            "example": "REG"
+          },
+          "codeTerritoireParent": {
+            "type": "string",
+            "description": "Le code du territoire parent",
+            "example": "75"
+          }
+        }
+      },
+      "ListeTypeTerritoire": {
+        "type": "object",
+        "properties": {
+          "typeTerritoires": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypeTerritoire"
+            }
+          }
+        }
+      },
+      "ListeTerritoireCommune": {
+        "type": "object",
+        "properties": {
+          "territoiresCommunes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TerritoireCommune"
+            }
+          }
+        }
+      },
+      "TerritoireCommune": {
+        "type": "object",
+        "properties": {
+          "datMaj": {
+            "type": "string",
+            "description": "Date de mise à jour du territoire",
+            "format": "date-time",
+            "example": "2024-04-21T17:13:44+02:00"
+          },
+          "codeTypeTerritoire": {
+            "type": "string",
+            "description": "Le type de territoire (voir le référentiel du Catalogue des Indicateurs pour les types disponibles)",
+            "example": "DEP"
+          },
+          "codeTerritoire": {
+            "type": "string",
+            "description": "Le code du territoire (voir le référentiel Territoire pour les codes disponibles)",
+            "example": "33"
+          },
+          "libelleTerritoire": {
+            "type": "string",
+            "description": "Le libellé du territoire",
+            "example": "GIRONDE"
+          },
+          "codeTypeTerritoireParent": {
+            "type": "string",
+            "description": "Le code type du territoire parent",
+            "example": "REG"
+          },
+          "codeTerritoireParent": {
+            "type": "string",
+            "description": "Le code du territoire parent",
+            "example": "75"
+          },
+          "codeTerritoireParentEPCI": {
+            "type": "string",
+            "description": "Le code du territoire parent EPCI"
+          },
+          "codeTerritoireParentBassin": {
+            "type": "string",
+            "description": "Le code du territoire parent Bassin"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "authentification_partenaire": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=/partenaire",
+            "scopes": {
+              "offresetdemandesemploi": "Obligatoire",
+              "api_stats-offres-demandes-emploiv1": "Obligatoire"
+            }
+          }
+        }
+      }
+    }
+  }
+}
