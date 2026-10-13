@@ -48,8 +48,9 @@ flowchart TD
     ENRICH --> CANON --> CHROMA
 ```
 
->Explication  de l'architecture : 
-> •Architecture du pipeline
+>Explication  de l'architecture :
+>
+>•Architecture du pipeline
 >
 >Ce projet collecte des offres d'emploi depuis plusieurs plateformes, les nettoie, les enrichit grâce à une IA locale, puis les indexe pour permettre une recherche sémantique. L'architecture se décompose en trois >blocs.
 >
@@ -57,7 +58,7 @@ flowchart TD
 >Les offres proviennent de trois sources : **Indeed** et **LinkedIn**, récupérées via la bibliothèque JobSpy, et **Adzuna**, interrogée via son API REST.
 >
 >• Backend Flask (`main.py`, port 5000)
->Les offres collectées sont reçues par les routes REST (`/api/jobs/*`), puis traitées en plusieurs étapes :
+>Les offres collectées sont reçues par les routes REST (`/api/jobs/*`), puis traitées en plusieurs étapes:
 >
 >1. **Déduplication** (`deduplication.py`) : un hash MD5 identifie les doublons afin de ne conserver qu'une seule version de chaque annonce.
 >2. **Nettoyage** (`JobTextSanitizer`) : un nettoyeur algorithmique supprime le bruit du texte (balises, éléments inutiles).
@@ -65,14 +66,14 @@ flowchart TD
 >4. **Enrichissement par IA locale** (`JobEnricher`) : le modèle Llama 3.2 1B, exécuté en local via Ollama, extrait et structure les informations clés de chaque offre.
 >5. **Gabarit canonique** (`job_indexer.py`) : chaque offre enrichie est mise sous un format uniforme et structuré, prêt à être indexé.
 >
-•Socle de stockage découplé
+>•Socle de stockage découplé
 >Les données sont réparties entre trois composants, chacun dédié à un usage précis :
 >
 >- **PostgreSQL 16** (base `projet_cv_db`, table `offres`) : stockage relationnel des offres.
 >- **ChromaDB** (collection `offres`, distance cosinus) : base vectorielle persistante pour la recherche sémantique.
 >- **Ollama** (`localhost:11434`) : runtime local qui fournit les modèles `all-minilm` (embeddings) et `llama3.2:1b` (enrichissement).
 >
-•En résumé
+>•En résumé
 >Les offres sont collectées, dédupliquées, nettoyées et stockées dans PostgreSQL, puis enrichies par une IA exécutée en local et indexées dans ChromaDB. Cette séparation entre données relationnelles et données >vectorielles permet à la fois des requêtes SQL classiques et une recherche sémantique (par exemple pour faire correspondre des offres à un CV), sans qu'aucune donnée ne soit envoyée à un service externe d'IA.
 ---
 
