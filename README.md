@@ -242,22 +242,3 @@ Projet_CV/
     ├── chromadb/                        # Données persistantes ChromaDB (fichiers HNSW SQLite)
     └── chroma_dump.json                 # Export JSON d'audit des offres vectorisées
 ```
-
----
-
-## 7. Guide de Dépannage & Erreurs Courantes (FAQ)
-
-### ❓ `ModuleNotFoundError: No module named 'src'`
-* **Cause** : Votre terminal n'exécute pas Python depuis la racine du projet, ou le venv n'est pas activé.
-* **Solution** : Assurez-vous d'être dans `C:\MASTER2_IA\Projet_CV` et d'avoir activé le `.venv` (`.\.venv\Scripts\Activate.ps1`).
-
-### ❓ `psycopg2.OperationalError: connection to server at "127.0.0.1" failed`
-* **Cause** : Le service PostgreSQL n'est pas démarré ou le mot de passe dans `.env` est incorrect.
-* **Solution** : Ouvrez les Services Windows (`services.msc`), démarrez `postgresql-x64-16`, et vérifiez `DATABASE_URL` dans `.env`.
-
-### ❓ `requests.exceptions.ConnectionError: Failed to establish a new connection to localhost:11434`
-* **Cause** : Ollama n'est pas lancé en arrière-plan.
-* **Solution** : Démarrez l'application Ollama ou tapez `ollama serve` dans un terminal.
-
-### ❓ L'enrichissement LLM est lent sur mon PC portable
-* **Explication** : Sur CPU Intel, chaque offre prend environ 5 à 7 secondes avec `llama3.2:1b`. Le worker `batch_enrich_jobs.py` traite par blocs de 5 avec 5s de pause thermique pour protéger votre processeur contre le *thermal throttling*. Vous pouvez le laisser tourner en tâche de fond.
