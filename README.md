@@ -54,12 +54,12 @@ flowchart TD
 
 Avant de commencer l'installation, assurez-vous d'avoir installé sur votre machine :
 
-| Outil | Version Requise | Rôle |
-| :--- | :--- | :--- |
-| **Python** | **3.11.x** (Strictement recommandé) | Compatibilité PyTorch, ChromaDB et Docling. |
-| **PostgreSQL** | **16.x** + pgAdmin 4 | Base relationnelle (`projet_cv_db`). |
-| **Ollama** | Dernière version | Serveur LLM et Embeddings local (100% gratuit, 0 API payante). |
-| **Git** | 2.x+ | Gestion de versions. |
+| Logo | Outil | Version requise | Rôle |
+| :---: | :--- | :--- | :--- |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" width="35" alt="Python"> | **Python** | **3.11.x** | Compatibilité avec PyTorch, ChromaDB et Docling. |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" width="35" alt="PostgreSQL"> | **PostgreSQL** | **16.x** + pgAdmin 4 | Base de données relationnelle (`projet_cv_db`). |
+| <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/ollama.svg" width="35" alt="Ollama"> | **Ollama** | Dernière version | Exécution locale des modèles LLM et d'embeddings. |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg" width="35" alt="Git"> | **Git** | **2.x+** | Gestion de versions du projet. |
 
 ---
 
