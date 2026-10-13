@@ -8,7 +8,7 @@ Ce projet implémente un système complet de matching sémantique et explicable 
 
 Ce document est le **guide complet d'installation et d'exécution** destiné aux membres de l'équipe pour reproduire intégralement la **Phase 0 (Setup & Socle)** et la **Phase 1 (Scraping, Nettoyage, Enrichissement LLM & Double Indexation)**.
 
-## 👥 Membres du projet
+##  Membres du projet
 
 | Nom et prénom |
 |---|
