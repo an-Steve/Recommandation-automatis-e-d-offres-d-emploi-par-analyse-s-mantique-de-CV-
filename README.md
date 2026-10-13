@@ -88,6 +88,13 @@ Avant de commencer l'installation, assurez-vous d'avoir installé sur votre mach
 | <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/ollama.svg" width="35" alt="Ollama"> | **Ollama** | Dernière version | Exécution locale des modèles LLM et d'embeddings. |
 | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg" width="35" alt="Git"> | **Git** | **2.x+** | Gestion de versions du projet. |
 
+
+| Technologie | Technologie | Technologie |
+| :---: | :---: | :---: |
+| Python 3.11 | Flask | PostgreSQL 16 |
+| SQLAlchemy | ChromaDB | Ollama |
+| all-MiniLM | Llama 3.2 1B | Pydantic |
+| JobSpy | API Adzuna | Docling |
 ---
 
 ## 3. Guide d'Installation Pas-à-Pas (Phase 0)
