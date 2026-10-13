@@ -53,7 +53,7 @@ flowchart TD
 >
 >Ce projet collecte des offres d'emploi depuis plusieurs plateformes, les nettoie, les enrichit grâce à une IA locale, puis les indexe pour permettre une recherche sémantique. L'architecture se décompose en trois >blocs.
 >
-> •Sources d'offres d'emploi
+>•Sources d'offres d'emploi
 >Les offres proviennent de trois sources : **Indeed** et **LinkedIn**, récupérées via la bibliothèque JobSpy, et **Adzuna**, interrogée via son API REST.
 >
 >• Backend Flask (`main.py`, port 5000)
@@ -65,7 +65,7 @@ flowchart TD
 >4. **Enrichissement par IA locale** (`JobEnricher`) : le modèle Llama 3.2 1B, exécuté en local via Ollama, extrait et structure les informations clés de chaque offre.
 >5. **Gabarit canonique** (`job_indexer.py`) : chaque offre enrichie est mise sous un format uniforme et structuré, prêt à être indexé.
 >
-• Socle de stockage découplé
+•Socle de stockage découplé
 >Les données sont réparties entre trois composants, chacun dédié à un usage précis :
 >
 >- **PostgreSQL 16** (base `projet_cv_db`, table `offres`) : stockage relationnel des offres.
