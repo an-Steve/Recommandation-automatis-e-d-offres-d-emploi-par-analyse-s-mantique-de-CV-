@@ -1,0 +1,41 @@
+# --- Document AI & Parsing ---
+docling>=2.0.0
+pypdf>=4.0.0
+
+# --- LLM Orchestration & Structuration ---
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-core>=0.3.0
+langgraph>=0.2.0
+ollama>=0.6.0
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+
+# --- Vector Store & Retrieval ---
+chromadb>=0.5.0
+rank-bm25>=0.2.2
+sentence-transformers>=3.0.0
+torch>=2.2.0
+
+# --- Base de données Relationnelle ---
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9
+
+# --- Scraping & Ingestion d'offres ---
+requests>=2.31.0
+python-jobspy>=1.1.50
+
+# --- API & UI ---
+flask>=3.0.0
+flask-cors>=4.0.0
+fastapi>=0.110.0
+uvicorn>=0.29.0
+streamlit>=1.35.0
+python-multipart>=0.0.9
+
+# --- Utilitaires & Visualisation ---
+pandas>=2.2.0
+numpy>=1.26.0
+python-dotenv>=1.0.1
+tqdm>=4.66.0
+rich>=13.7.0
