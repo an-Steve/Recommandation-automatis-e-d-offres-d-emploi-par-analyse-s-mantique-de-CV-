@@ -3,11 +3,20 @@
 > **Projet Master 2 Intelligence Artificielle**  
 > **Composants** : Document AI (Docling), Ingestion Multi-Sources (JobSpy, Adzuna), Embeddings Denses (ChromaDB + Ollama), IA Générative Locale (Llama 3.2 1B), Recherche Hybride & Reranking.
 
+
 Ce projet implémente un système complet de matching sémantique et explicable entre des CVs de candidats (PDF) et des offres d'emploi collectées sur le marché.
 
 Ce document est le **guide complet d'installation et d'exécution** destiné aux membres de l'équipe pour reproduire intégralement la **Phase 0 (Setup & Socle)** et la **Phase 1 (Scraping, Nettoyage, Enrichissement LLM & Double Indexation)**.
 
----
+## 👥 Membres du projet
+
+| Nom et prénom |
+|---|
+| ANTON NELCON Steve |
+| LIMACHE Adrien |
+| MOULAI HACENE Rania |
+| Ibtissam Zaid |
+| Caroline Zheng |---
 
 ## 1. Architecture Globale (Phase 0 & 1)
 
