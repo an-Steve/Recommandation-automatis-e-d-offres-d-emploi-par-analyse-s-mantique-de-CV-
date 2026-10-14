@@ -5,7 +5,7 @@
 Ce projet implémente un système complet de matching sémantique et explicable entre des CVs de candidats (PDF) et des offres d'emploi collectées sur le marché.>
 Ce document est le **guide complet d'installation et d'exécution** destiné aux membres de l'équipe pour reproduire intégralement la **Phase 0 (Setup & Socle)** et la **Phase 1 (Scraping, Nettoyage, Enrichissement LLM & Double Indexation)**.
 
-##  Membres du projet
+##  Membres du projet :
 
 | Nom et prénom |
 |---|
@@ -68,8 +68,8 @@ flowchart TD
 >
 >•En résumé
 >Les offres sont collectées, dédupliquées, nettoyées et stockées dans PostgreSQL, puis enrichies par une IA exécutée en local et indexées dans ChromaDB. Cette séparation entre données relationnelles et données >vectorielles permet à la fois des requêtes SQL classiques et une recherche sémantique (par exemple pour faire correspondre des offres à un CV), sans qu'aucune donnée ne soit envoyée à un service externe d'IA.
+>**Composants** : Document AI (Docling), Ingestion Multi-Sources (JobSpy, Adzuna), Embeddings Denses (ChromaDB + Ollama), IA Générative Locale (Llama 3.2 1B), Recherche Hybride & Reranking.
 ---
-> **Composants** : Document AI (Docling), Ingestion Multi-Sources (JobSpy, Adzuna), Embeddings Denses (ChromaDB + Ollama), IA Générative Locale (Llama 3.2 1B), Recherche Hybride & Reranking.
 ## 2. Prérequis Système Obligatoires
 
 Avant de commencer l'installation, assurez-vous d'avoir installé sur votre machine :
