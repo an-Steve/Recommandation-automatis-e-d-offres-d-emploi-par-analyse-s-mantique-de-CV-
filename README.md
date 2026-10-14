@@ -12,7 +12,7 @@ Ce document est le **guide complet d'installation et d'exécution** destiné aux
 | <u>ANTON NELCON Steve</u> &nbsp; \| &nbsp; <u>LIMACHE Adrien</u> &nbsp; \| &nbsp; <u>MOULAI HACENE Rania</u> &nbsp; \| &nbsp; <u>ZAID Ibtissam</u> &nbsp; \| &nbsp; <u>ZHENG Caroline</u> |
 
 ## 1. Architecture Globale (Phase 0 & 1) 
->- réalisé du 10 au  13 octobre 2026
+> réalisé du 10 au  13 octobre 2026
 
 ```mermaid
 flowchart TD
