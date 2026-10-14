@@ -9,7 +9,7 @@ Ce document est le **guide complet d'installation et d'exécution** destiné aux
 
 | Nom et prénom |
 |---|
-| ANTON NELCON Steve&nbsp;&nbsp; \| &nbsp;&nbsp; LIMACHE Adrien&nbsp;&nbsp; \| &nbsp;&nbsp; MOULAI HACENE Rania&nbsp;&nbsp; \| &nbsp;&nbsp; ZAID Ibtissam&nbsp;&nbsp; \| &nbsp;&nbsp; ZHENG Caroline |
+| <u>ANTON NELCON Steve</u> &nbsp; \| &nbsp; <u>LIMACHE Adrien</u> &nbsp; \| &nbsp; <u>MOULAI HACENE Rania</u> &nbsp; \| &nbsp; <u>ZAID Ibtissam</u> &nbsp; \| &nbsp; <u>ZHENG Caroline</u> |
 
 ## 1. Architecture Globale (Phase 0 & 1)
 
