@@ -1,4 +1,4 @@
-# Recommandation Sémantique d'Offres d'Emploi par Analyse de CV
+# <u>Recommandation Sémantique d'Offres d'Emploi par Analyse de CV</u>
 
 > **Projet Master 2 Intelligence Artificielle - Université Paris 8**  
 
