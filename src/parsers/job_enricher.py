@@ -1,16 +1,20 @@
 """
 src/parsers/job_enricher.py
-Module d'enrichissement IA des offres d'emploi via LLM local (Ollama + Pydantic).
-Zéro regex, zéro dictionnaire : extraction sémantique contextuelle et structurée.
+Module d'enrichissement d'offres d'emploi multi-secteurs via GLiNER (Zero-Shot NER extractif)
+et extraction déterministe des prérequis (diplôme Bac+X, années d'expérience).
+Remplace le prompting Few-Shot génératif : 0 hallucination, support natif des 8 secteurs.
 """
 
-import re
 import logging
 from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
 
-from src.utils.ollama_client import OllamaClient
 from src.database.sql_models import Offre
+from src.parsers.gliner_extractor import (
+    GlinerSkillExtractor,
+    JobRequirementsHeuristic,
+    DEFAULT_MODEL_NAME
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,14 +22,13 @@ logger = logging.getLogger(__name__)
 class JobEnrichmentOutput(BaseModel):
     """
     Schéma de validation Pydantic strict pour l'extraction des critères d'offre d'emploi.
-    Tolérant aux valeurs null et types approximatifs des petits modèles locaux.
+    Tolérant aux valeurs null et types approximatifs.
     """
     competences_necessaires: Optional[List[str]] = Field(
         default_factory=list,
         description=(
-            "Liste normalisée des compétences techniques, outils, langages et bibliothèques "
-            "exigés ou fortement souhaités dans l'offre (ex: ['Python', 'SQL', 'PyTorch', 'Docker']). "
-            "Ne pas inclure de compétences comportementales génériques (ex: 'rigueur')."
+            "Liste normalisée des compétences, outils, langages, logiciels ou habilitations "
+            "extraits verbatim de l'annonce (ex: ['Python', 'Docker'] ou ['Sage 100', 'IFRS'])."
         )
     )
     niveau_etude_min: Optional[int] = Field(
@@ -79,102 +82,74 @@ class JobEnrichmentOutput(BaseModel):
 
 class JobEnricher:
     """
-    Enrichisseur d'offres utilisant OllamaClient et Structured Outputs Pydantic.
+    Enrichisseur d'offres d'emploi multi-secteurs.
+    Exploite GLiNER (Zero-Shot NER) pour l'extraction fidèle de compétences
+    et JobRequirementsHeuristic pour le diplôme et l'expérience.
     """
 
     def __init__(self, model_name: Optional[str] = None):
-        self.client = OllamaClient(default_model=model_name)
-
-    @staticmethod
-    def extract_requirements_snippet(description: str, max_chars: int = 1200) -> str:
-        """
-        Extrait intelligemment la section la plus pertinente d'une offre d'emploi
-        (Profil recherché, Compétences requises, Qualifications) pour minimiser la charge CPU du LLM.
-        """
-        clean_text = description.strip()
-        if len(clean_text) <= max_chars:
-            return clean_text
-
-        anchor_patterns = [
-            r"(profil\s+recherch[eé]|votre\s+profil|qui\s+êtes[- ]vous|ce\s+que\s+nous\s+recherchons)",
-            r"(comp[eé]tences\s+requises?|pr[eé]requis|qualifications?|exigences?|pr[eé]alables?)",
-            r"(vos\s+atouts|profil\s+souhait[eé]|exp[eé]rience\s+souhait[eé]e)",
-            r"(skills|requirements|what\s+you\s+need|who\s+you\s+are)",
-        ]
-
-        lower_text = clean_text.lower()
-        best_match_idx = -1
-
-        for pat in anchor_patterns:
-            match = re.search(pat, lower_text)
-            if match:
-                best_match_idx = match.start()
-                break
-
-        if best_match_idx != -1:
-            start_idx = max(0, best_match_idx - 50)
-            return clean_text[start_idx : start_idx + max_chars]
-
-        # Si aucun en-tête repéré, on prend la fin de la description où se situe le profil
-        return clean_text[-max_chars:]
-
-    def enrich_job_text(self, poste: str, description: str) -> JobEnrichmentOutput:
-        """
-        Extrait les compétences, diplôme et expérience avec la stratégie gagnante Few-Shot Compact.
-        """
-        snippet = self.extract_requirements_snippet(description)
-
-        system_prompt = (
-            "Tu es un assistant RH technique. Extrais sous format JSON strict EXACTEMENT et UNIQUEMENT ces 3 champs :\n"
-            "- \"competences_necessaires\": liste de chaînes des compétences/technologies/outils demandés\n"
-            "- \"niveau_etude_min\": entier (0 si non spécifié, 2 pour Bac+2, 3 pour Bac+3, 5 pour Bac+5/Ingénieur)\n"
-            "- \"min_experience_years\": float (ex: 0.0 pour débutant, 2.0 pour 2 ans)\n"
-            "Règle stricte : n'ajoute AUCUN autre champ dans le JSON."
-        )
-        shot_user = "Poste : Analyste Data\nExtrait : Bac+5 ingénieur, maîtrise SQL et Tableau. Débutant."
-        shot_assistant = '{"competences_necessaires": ["SQL", "Tableau"], "niveau_etude_min": 5, "min_experience_years": 0.0}'
-
-        target_user = f"Poste : {poste}\nExtrait : {snippet}"
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": shot_user},
-            {"role": "assistant", "content": shot_assistant},
-            {"role": "user", "content": target_user}
-        ]
-
-        raw_output = self.client.chat(
-            messages=messages,
-            format="json",
-            temperature=0.0,
-            num_ctx=1024,
-            num_predict=260,
-            repeat_penalty=1.2,
+        self.gliner_extractor = GlinerSkillExtractor.get_instance(
+            model_name=model_name or DEFAULT_MODEL_NAME
         )
 
-        return self.client._clean_and_parse(raw_output, JobEnrichmentOutput)
+    def enrich_job_text(
+        self,
+        poste: str,
+        description: str,
+        secteur: Optional[str] = "it_data"
+    ) -> JobEnrichmentOutput:
+        """
+        Extrait les compétences, diplôme et expérience sans aucun prompting Few-Shot.
+        Garantit une extraction 100% verbatim et adaptée au secteur économique.
+        """
+        full_text = f"{poste}\n{description}"
+
+        # 1. Extraction des compétences et outils par GLiNER (Zero-Shot multi-secteurs)
+        skills = self.gliner_extractor.extract_skills(
+            text=full_text,
+            secteur=secteur
+        )
+
+        # 2. Extraction du diplôme et de l'expérience par heuristique déterministe
+        diploma = JobRequirementsHeuristic.extract_diploma(full_text)
+        experience = JobRequirementsHeuristic.extract_experience(full_text)
+
+        return JobEnrichmentOutput(
+            competences_necessaires=skills,
+            niveau_etude_min=diploma,
+            min_experience_years=experience,
+        )
 
     def enrich_offre_instance(self, offre: Offre) -> Offre:
         """
         Met à jour in-place une instance SQLAlchemy Offre avec les champs extraits.
+        S'adapte dynamiquement au secteur de l'offre (santé, BTP, finance, IT, etc.).
         """
-        enriched = self.enrich_job_text(poste=offre.poste, description=offre.description)
-        # Nettoyage et déduplication des compétences
-        raw_skills = enriched.competences_necessaires or []
-        skills = sorted(list({s.strip() for s in raw_skills if s and s.strip()}))
+        full_text = f"{offre.poste}\n{offre.description}\n{offre.mission or ''}"
 
-        # Si aucune compétence technique explicite n'a été trouvée (ex: offre purement managériale/produit),
-        # on enregistre ['Non spécifié'] pour marquer définitivement l'offre comme traitée
+        # 1. Extraction des compétences ciblées selon le secteur de l'offre
+        skills = self.gliner_extractor.extract_skills(
+            text=full_text,
+            secteur=offre.secteur
+        )
+
+        # Si aucune compétence spécifique n'est mentionnée dans l'annonce
         if not skills:
             skills = ["Non spécifié"]
 
         offre.competences_necessaires = skills
-        if enriched.niveau_etude_min is not None and int(enriched.niveau_etude_min) > 0:
-            offre.niveau_etude_min = int(enriched.niveau_etude_min)
-        if enriched.min_experience_years is not None and float(enriched.min_experience_years) > 0.0:
-            offre.min_experience_years = float(enriched.min_experience_years)
 
-        # Les compétences ayant changé, l'offre nécessite une mise à jour dans ChromaDB
+        # 2. Détection du niveau d'études
+        diploma = JobRequirementsHeuristic.extract_diploma(full_text)
+        if diploma > 0:
+            offre.niveau_etude_min = diploma
+
+        # 3. Détection des années d'expérience requises
+        exp = JobRequirementsHeuristic.extract_experience(full_text)
+        if exp > 0.0:
+            offre.min_experience_years = exp
+
+        # Marque l'offre comme prête pour synchronisation dans ChromaDB
         offre.is_indexed = False
 
         return offre
