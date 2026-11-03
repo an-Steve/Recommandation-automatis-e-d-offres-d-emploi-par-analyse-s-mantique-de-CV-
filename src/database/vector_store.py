@@ -1,13 +1,14 @@
 """
 Gestionnaire de la base vectorielle ChromaDB.
+Supporte FastEmbed (ONNX Runtime C++ local, haute performance CPU) et Ollama.
 """
 import logging
 from typing import List, Dict, Any, Optional
 import chromadb
 from chromadb.api.models.Collection import Collection
-from src.config import settings
-
+from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 from chromadb.utils import embedding_functions
+from src.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +16,44 @@ logger = logging.getLogger(__name__)
 chroma_client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIR)
 
 
+class FastEmbedEmbeddingFunction(EmbeddingFunction[Documents]):
+    """
+    Fonction d'embedding haute performance ONNX C++ basée sur FastEmbed.
+    Exécution locale directe en C++ (0 serveur HTTP, 0 overhead PyTorch, 0 timeout).
+    """
+    _INSTANCE = None
+    _MODEL = None
+
+    def __init__(self, model_name: str = "nomic-ai/nomic-embed-text-v1.5", **kwargs):
+        self.model_name = model_name
+        if FastEmbedEmbeddingFunction._MODEL is None:
+            from fastembed import TextEmbedding
+            logger.info(f"⏳ Initialisation de FastEmbed ONNX ({model_name})...")
+            FastEmbedEmbeddingFunction._MODEL = TextEmbedding(model_name=model_name, **kwargs)
+            logger.info("✅ Modèle FastEmbed prêt.")
+        self._model = FastEmbedEmbeddingFunction._MODEL
+
+    def __call__(self, input: Documents) -> Embeddings:
+        # Conversion du générateur numpy en liste de floats standard pour ChromaDB
+        return [list(map(float, e)) for e in self._model.embed(input)]
+
+    def name(self) -> str:
+        # Rétrocompatibilité stricte avec la signature persistée dans ChromaDB
+        return "ollama"
+
+
 def get_embedding_function():
     """
     Retourne la fonction d'embedding selon le provider configuré dans .env.
-    Par défaut : Ollama bge-m3 sur http://localhost:11434.
+    Par défaut : FastEmbed ONNX C++ local (nomic-ai/nomic-embed-text-v1.5).
     """
-    if getattr(settings, "EMBEDDING_PROVIDER", "ollama") == "ollama":
+    provider = getattr(settings, "EMBEDDING_PROVIDER", "fastembed").lower()
+    if provider == "fastembed":
+        return FastEmbedEmbeddingFunction(
+            model_name=settings.EMBEDDING_MODEL_NAME,
+            cache_dir=str(settings.fastembed_cache_dir)
+        )
+    elif provider == "ollama":
         return embedding_functions.OllamaEmbeddingFunction(
             url=settings.OLLAMA_BASE_URL,
             model_name=settings.EMBEDDING_MODEL_NAME,
@@ -32,7 +65,7 @@ def get_embedding_function():
 def get_offres_collection() -> Collection:
     """
     Récupère ou crée la collection vectorielle pour les offres d'emploi.
-    Configure explicitement la distance cosinus HNSW et l'embedding Ollama bge-m3.
+    Configure explicitement la distance cosinus HNSW et l'embedding FastEmbed / Ollama.
     """
     return chroma_client.get_or_create_collection(
         name=settings.CHROMA_COLLECTION_OFFRES,
@@ -52,7 +85,7 @@ def upsert_job_vector(
     
     :param job_id: Identifiant exact correspondant à la clé primaire de PostgreSQL.
     :param document: Texte représentatif de l'offre (Poste + Compétences + Missions).
-    :param embedding: Vecteur dense calculé par BGE-M3 (1024 floats).
+    :param embedding: Vecteur dense calculé (768 floats).
     :param metadata: Critères de filtrage strict (type_de_contrat, niveau_etude_min, etc.).
     """
     collection = get_offres_collection()
