@@ -5,6 +5,14 @@ Coordonne Adzuna et JobSpy (Indeed/LinkedIn), applique un filtrage strict sur la
 déduplique via MD5 dans PostgreSQL et indexe automatiquement dans ChromaDB.
 """
 
+import sys
+from pathlib import Path
+
+# Résolution de la racine du projet pour exécution en CLI
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 import logging
 from datetime import datetime, date
 from typing import List, Dict, Any, Optional
@@ -38,7 +46,7 @@ class DailyJobScraper:
     Coordonnateur de scraping quotidien multi-plateformes et multi-secteurs.
     """
 
-    def __init__(self, batch_size_chroma: int = 1):
+    def __init__(self, batch_size_chroma: int = 8):
         self.indexer = JobIndexer(batch_size=batch_size_chroma)
         self.adzuna = AdzunaScraper(country="fr")
 
@@ -94,7 +102,7 @@ class DailyJobScraper:
                 total_saved += stats.get("nouvelles_offres_sql", 0)
                 total_duplicates += stats.get("doublons_ignores", 0)
                 total_indexed += stats.get("vecteurs_indexes_chroma", 0)
-                total_enriched += stats.get("offres_enrichies_llama", 0)
+                total_enriched += stats.get("offres_enrichies_gliner", stats.get("offres_enrichies_llama", 0))
 
             return {
                 "status": "success",
@@ -106,7 +114,7 @@ class DailyJobScraper:
                     "nouvelles_offres_sql": total_saved,
                     "doublons_ignores": total_duplicates,
                     "vecteurs_indexes_chroma": total_indexed,
-                    "offres_enrichies_llama": total_enriched,
+                    "offres_enrichies_gliner": total_enriched,
                 },
                 "details_par_secteur": sector_reports,
             }
@@ -196,19 +204,11 @@ class DailyJobScraper:
             save_stats = self.indexer.save_raw_jobs_to_postgres(collected_jobs)
 
         # ----------------------------------------------------------------------
-        # 4. Indexation Vectorielle Immédiate dans ChromaDB
-        # ----------------------------------------------------------------------
-        indexed_chroma_count = 0
-        if save_stats["saved"] > 0:
-            indexed_chroma_count = self.indexer.index_pending_jobs()
-
-        # ----------------------------------------------------------------------
-        # 5. Enrichissement IA Llama 3.2 pour TOUTES les offres aux colonnes vides
+        # 4. Enrichissement Zero-Shot GLiNER (Compétences, Diplôme, Expérience)
         # ----------------------------------------------------------------------
         should_enrich = auto_enrich if auto_enrich_adzuna is None else auto_enrich_adzuna
         enriched_count = 0
-        if should_enrich:
-            import time
+        if should_enrich and save_stats["saved"] > 0:
             from src.parsers.job_enricher import JobEnricher
             from src.database.db_session import SessionLocal
             from src.database.sql_models import Offre
@@ -216,33 +216,42 @@ class DailyJobScraper:
             enricher = JobEnricher()
             db = SessionLocal()
             try:
-                # Cible toutes les offres dont les compétences ne sont pas encore renseignées
+                # Cible en priorité les offres non enrichies
                 query_enrich = db.query(Offre).filter(
                     (Offre.competences_necessaires == []) | (Offre.competences_necessaires == None)
                 ).order_by(Offre.created_at.desc())
 
-                if enrich_limit > 0:
+                if enrich_limit > 0 and enrich_limit < save_stats["saved"]:
                     query_enrich = query_enrich.limit(enrich_limit)
 
                 jobs_to_enrich = query_enrich.all()
                 if jobs_to_enrich:
-                    pbar_llama = tqdm(jobs_to_enrich, desc="🧠 Enrichissement Llama 3.2 (Toutes sources)", unit="offre")
-                    for o in pbar_llama:
+                    pbar_gliner = tqdm(jobs_to_enrich, desc="⚡ Enrichissement GLiNER (Zero-Shot)", unit="offre")
+                    for o in pbar_gliner:
                         company_display = f"[{o.source.upper()}] {(o.company or 'Inconnue')[:10]}"
-                        pbar_llama.set_postfix_str(f"Extraction {company_display}...")
                         try:
                             enricher.enrich_offre_instance(o)
-                            db.commit()
                             enriched_count += 1
-                            pbar_llama.set_postfix_str(f"OK {company_display} ({len(o.competences_necessaires)} comp, Bac+{o.niveau_etude_min})")
-                            time.sleep(1)  # Pause thermique CPU
+                            skills_count = len(o.competences_necessaires or [])
+                            pbar_gliner.set_postfix_str(f"OK {company_display} ({skills_count} comp, Bac+{o.niveau_etude_min})")
                         except Exception as err:
-                            db.rollback()
                             logger.warning(f"⚠️ Erreur enrichissement offre {o.id}: {err}")
+                    db.commit()
                 else:
                     logger.info("ℹ️ Aucune offre nécessitant d'enrichissement.")
+            except Exception as err:
+                db.rollback()
+                logger.error(f"❌ Erreur lors de l'enrichissement GLiNER : {err}")
             finally:
                 db.close()
+
+        # ----------------------------------------------------------------------
+        # 5. Indexation Vectorielle Canonique UNIQUE dans ChromaDB (FastEmbed ONNX C++)
+        # ----------------------------------------------------------------------
+        indexed_chroma_count = 0
+        if save_stats["saved"] > 0:
+            logger.info("⚡ Indexation vectorielle canonique UNIQUE dans ChromaDB (FastEmbed ONNX C++)...")
+            indexed_chroma_count = self.indexer.index_pending_jobs()
 
         return {
             "status": "success",
@@ -255,8 +264,54 @@ class DailyJobScraper:
                 "par_plateforme": stats_per_source,
                 "nouvelles_offres_sql": save_stats["saved"],
                 "doublons_ignores": save_stats["duplicates"],
+                "offres_enrichies_gliner": enriched_count,
                 "vecteurs_indexes_chroma": indexed_chroma_count,
-                "offres_enrichies_llama": enriched_count,
-                "offres_adzuna_enrichies_llama": enriched_count,
             }
         }
+
+
+if __name__ == "__main__":
+    import argparse
+    import json
+
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+    parser = argparse.ArgumentParser(description="Scraper Quotidien Multi-Plateformes & Multi-Secteurs (Master 2 IA)")
+    parser.add_argument("--sector", "--secteur", default="all", help="Code secteur ou 'all' pour les 8 secteurs")
+    parser.add_argument("--limit", type=int, default=10, help="Limite d'offres par plateforme (défaut: 10)")
+    parser.add_argument("--sources", nargs="+", default=["adzuna", "indeed", "linkedin"], help="Sources à scraper")
+    parser.add_argument("--date", default=None, help="Date cible YYYY-MM-DD (défaut: aujourd'hui)")
+
+    args = parser.parse_args()
+
+    print("=" * 70)
+    print(f"🌍 COLLECTE QUOTIDIENNE (Secteur: '{args.sector}', Sources: {args.sources})")
+    print("=" * 70)
+
+    scraper = DailyJobScraper()
+    rapport = scraper.run_daily_pipeline(
+        target_date_str=args.date,
+        sector_code=args.sector,
+        sources=args.sources,
+        limit_per_source=args.limit,
+        auto_enrich=True
+    )
+
+    print("\n" + "=" * 70)
+    print("📊 BILAN DE LA COLLECTE :")
+    print("=" * 70)
+    if "statistiques_globales" in rapport:
+        stats = rapport["statistiques_globales"]
+        print(f"• Total offres collectées : {stats['total_collecte_brute']}")
+        print(f"• Nouvelles offres en base : {stats['nouvelles_offres_sql']}")
+        print(f"• Doublons MD5 écartés     : {stats['doublons_ignores']}")
+        print(f"• Vecteurs indexés ChromaDB: {stats['vecteurs_indexes_chroma']}")
+    else:
+        stats = rapport.get("statistiques", {})
+        print(f"• Total offres collectées : {stats.get('total_collecte_brute', 0)}")
+        print(f"• Nouvelles offres en base : {stats.get('nouvelles_offres_sql', 0)}")
+        print(f"• Doublons MD5 écartés     : {stats.get('doublons_ignores', 0)}")
+    print("=" * 70)
