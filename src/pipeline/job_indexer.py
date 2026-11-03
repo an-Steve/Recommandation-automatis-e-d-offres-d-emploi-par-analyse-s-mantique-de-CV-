@@ -1,7 +1,15 @@
 """
 src/pipeline/job_indexer.py
-Worker d'Indexation Vectorielle par Lots (PostgreSQL -> Ollama bge-m3 -> ChromaDB).
+Worker d'Indexation Vectorielle par Lots (PostgreSQL -> FastEmbed ONNX -> ChromaDB).
 """
+
+import sys
+from pathlib import Path
+
+# Résolution de la racine du projet pour les imports absolus
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 import logging
 import re
@@ -114,10 +122,10 @@ def build_canonical_job_document(job: Offre) -> str:
 
 class JobIndexer:
     """
-    Gère la persistance brute dans PostgreSQL et l'indexation vectorielle via Ollama.
+    Gère la persistance brute dans PostgreSQL et l'indexation vectorielle via FastEmbed / ChromaDB.
     """
 
-    def __init__(self, batch_size: int = 1):
+    def __init__(self, batch_size: int = 8):
         self.batch_size = batch_size
         self.collection = get_offres_collection()
 
@@ -173,7 +181,7 @@ class JobIndexer:
                 logger.info("✅ Toutes les offres de PostgreSQL sont déjà indexées dans ChromaDB.")
                 return 0
 
-            logger.info(f"⚡ {len(pending_jobs)} offre(s) en attente d'embedding Ollama...")
+            logger.info(f"⚡ {len(pending_jobs)} offre(s) en attente d'embedding vectoriel...")
 
             with tqdm(total=len(pending_jobs), desc="⚡ Vectorisation ChromaDB", unit="offre") as pbar:
                 for i in range(0, len(pending_jobs), self.batch_size):
@@ -326,7 +334,7 @@ if __name__ == "__main__":
     
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     print("=" * 70)
-    print("⚡ INDEXATION VECTORIELLE CHROMADB (LOTS DE 1 PAR 1)")
+    print("⚡ INDEXATION VECTORIELLE CHROMADB (FASTEMBED ONNX)")
     print("=" * 70)
-    worker = JobIndexer(batch_size=1)
+    worker = JobIndexer(batch_size=8)
     worker.index_pending_jobs()

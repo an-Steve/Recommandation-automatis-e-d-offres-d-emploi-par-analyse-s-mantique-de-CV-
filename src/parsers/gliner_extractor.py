@@ -20,19 +20,27 @@ DEFAULT_MODEL_NAME = "urchade/gliner_multi-v2.1"
 def resolve_gliner_model_path(model_name: str = DEFAULT_MODEL_NAME) -> str:
     """
     Résout le chemin du modèle :
-    1. Si un snapshot local complet est présent dans le cache Hugging Face, l'utilise directement (chargement instantané hors-ligne).
+    1. Si un snapshot local complet est présent dans models/huggingface/ ou dans le cache Hugging Face,
+       l'utilise directement (chargement instantané hors-ligne).
     2. Sinon, retourne l'identifiant distant Hugging Face.
     """
     if os.path.exists(model_name):
         return model_name
-    hub_cache = Path.home() / ".cache" / "huggingface" / "hub" / f"models--{model_name.replace('/', '--')}" / "snapshots"
-    if hub_cache.exists():
-        snapshots = [d for d in hub_cache.iterdir() if d.is_dir()]
-        if snapshots:
-            # Vérifier que le fichier model.safetensors ou pytorch_model.bin existe bien
-            for snap in snapshots:
-                if (snap / "model.safetensors").exists() or (snap / "pytorch_model.bin").exists():
-                    return str(snap)
+
+    from src.config import settings
+    # Vérifier en priorité le dossier models/ local du projet, puis le cache utilisateur
+    candidate_dirs = [
+        settings.huggingface_cache_dir / "hub" / f"models--{model_name.replace('/', '--')}" / "snapshots",
+        Path.home() / ".cache" / "huggingface" / "hub" / f"models--{model_name.replace('/', '--')}" / "snapshots",
+    ]
+
+    for hub_cache in candidate_dirs:
+        if hub_cache.exists():
+            snapshots = [d for d in hub_cache.iterdir() if d.is_dir()]
+            if snapshots:
+                for snap in snapshots:
+                    if (snap / "model.safetensors").exists() or (snap / "pytorch_model.bin").exists() or (snap / "model.onnx").exists():
+                        return str(snap)
     return model_name
 
 
@@ -92,8 +100,14 @@ class GlinerSkillExtractor:
             from gliner import GLiNER
             target_path = resolve_gliner_model_path(model_name)
             logger.info(f"⏳ Chargement du modèle GLiNER multilingue depuis '{target_path}'...")
-            GlinerSkillExtractor._MODEL = GLiNER.from_pretrained(target_path)
-            logger.info("✅ Modèle GLiNER prêt.")
+            try:
+                # Tentative d'accélération ONNX si le fichier model.onnx est présent
+                GlinerSkillExtractor._MODEL = GLiNER.from_pretrained(target_path, load_onnx_model=True)
+                logger.info("✅ Modèle GLiNER chargé en mode ONNX Runtime.")
+            except Exception as e:
+                logger.debug(f"ONNX non disponible pour ce modèle ({e}), repli standard PyTorch...")
+                GlinerSkillExtractor._MODEL = GLiNER.from_pretrained(target_path)
+                logger.info("✅ Modèle GLiNER prêt (PyTorch).")
         self.model = GlinerSkillExtractor._MODEL
 
     @classmethod
