@@ -24,7 +24,7 @@ def get_embedding_function():
         return embedding_functions.OllamaEmbeddingFunction(
             url=settings.OLLAMA_BASE_URL,
             model_name=settings.EMBEDDING_MODEL_NAME,
-            timeout=180
+            timeout=300
         )
     return None
 

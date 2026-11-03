@@ -21,7 +21,7 @@ class Settings(BaseSettings):
         # 4. Modèles IA, Ollama & Matériel
         OLLAMA_BASE_URL: str = "http://localhost:11434"
         EMBEDDING_PROVIDER: str = "ollama"  # "ollama" ou "sentence-transformers"
-        EMBEDDING_MODEL_NAME: str = "all-minilm"
+        EMBEDDING_MODEL_NAME: str = "nomic-embed-text"
         LLM_EXTRACTION_MODEL: str = "llama3.2:1b"
         LLM_EXPLANATION_MODEL: str = "mistral:latest"
         RERANKER_MODEL_NAME: str = "BAAI/bge-reranker-v2-m3"

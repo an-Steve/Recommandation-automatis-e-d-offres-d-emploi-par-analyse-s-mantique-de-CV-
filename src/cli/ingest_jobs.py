@@ -18,6 +18,7 @@ from src.pipeline.job_indexer import JobIndexer
 from src.database.db_session import SessionLocal
 from src.database.sql_models import Offre
 from src.database.vector_store import get_offres_collection
+from src.config import settings
 
 
 def main():
@@ -27,7 +28,7 @@ def main():
     parser.add_argument("--query", type=str, default="Data Scientist", help="Mots-clés de recherche")
     parser.add_argument("--location", type=str, default="Paris", help="Lieu cible")
     parser.add_argument("--limit", type=int, default=10, help="Nombre d'offres à collecter par source")
-    parser.add_argument("--batch-size", type=int, default=5, help="Taille des lots d'embedding Ollama (5 conseillé pour CPU)")
+    parser.add_argument("--batch-size", type=int, default=1, help="Taille des lots d'embedding Ollama (1 conseillé pour CPU)")
     parser.add_argument("--only-index", action="store_true", help="Ne pas scraper, indexer uniquement les offres en attente")
 
     args = parser.parse_args()
