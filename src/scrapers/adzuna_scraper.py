@@ -153,7 +153,7 @@ class AdzunaScraper(BaseJobScraper):
                 "type_de_contrat": contract,
                 "remote_policy": "Non spécifié",
                 "description": description,
-                "mission": description,
+                "mission": "",
                 "source_url": item.get("redirect_url", ""),
                 "salary_min": salary_min,
                 "salary_max": salary_max,

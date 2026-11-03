@@ -38,7 +38,7 @@ class DailyJobScraper:
     Coordonnateur de scraping quotidien multi-plateformes et multi-secteurs.
     """
 
-    def __init__(self, batch_size_chroma: int = 5):
+    def __init__(self, batch_size_chroma: int = 1):
         self.indexer = JobIndexer(batch_size=batch_size_chroma)
         self.adzuna = AdzunaScraper(country="fr")
 
@@ -65,6 +65,52 @@ class DailyJobScraper:
         """
         target_date = parse_target_date(target_date_str)
         target_iso = target_date.isoformat()
+
+        # Support du mode global multi-secteurs ("all", "tous", "*")
+        if str(sector_code).strip().lower() in ["all", "tous", "*"]:
+            all_sectors = list_supported_sectors()
+            logger.info(f"🌐 Lancement du scraping global pour les {len(all_sectors)} secteurs...")
+            sector_reports = []
+            total_raw = 0
+            total_saved = 0
+            total_duplicates = 0
+            total_indexed = 0
+            total_enriched = 0
+
+            for sec in all_sectors:
+                rep = self.run_daily_pipeline(
+                    target_date_str=target_date_str,
+                    sector_code=sec,
+                    sources=sources,
+                    limit_per_source=limit_per_source,
+                    location=location,
+                    auto_enrich=auto_enrich,
+                    enrich_limit=enrich_limit,
+                    auto_enrich_adzuna=auto_enrich_adzuna,
+                )
+                sector_reports.append(rep)
+                stats = rep.get("statistiques", {})
+                total_raw += stats.get("total_collecte_brute", 0)
+                total_saved += stats.get("nouvelles_offres_sql", 0)
+                total_duplicates += stats.get("doublons_ignores", 0)
+                total_indexed += stats.get("vecteurs_indexes_chroma", 0)
+                total_enriched += stats.get("offres_enrichies_llama", 0)
+
+            return {
+                "status": "success",
+                "mode": "all_sectors",
+                "target_date": target_iso,
+                "secteurs_traites": all_sectors,
+                "statistiques_globales": {
+                    "total_collecte_brute": total_raw,
+                    "nouvelles_offres_sql": total_saved,
+                    "doublons_ignores": total_duplicates,
+                    "vecteurs_indexes_chroma": total_indexed,
+                    "offres_enrichies_llama": total_enriched,
+                },
+                "details_par_secteur": sector_reports,
+            }
+
         sector_cfg = get_sector_config(sector_code)
         target_sources = [s.lower() for s in (sources or ["adzuna", "indeed", "linkedin"])]
 

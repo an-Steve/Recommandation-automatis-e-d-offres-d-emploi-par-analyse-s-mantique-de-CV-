@@ -1,6 +1,7 @@
 """
 src/scrapers/jobspy_scraper.py
 Connecteur multi-plateformes utilisant python-jobspy (Indeed, LinkedIn, HelloWork).
+Intègre une normalisation robuste des types de contrats (simples et composites).
 """
 
 import logging
@@ -39,11 +40,38 @@ class JobSpyScraper(BaseJobScraper):
         self.country_indeed = country_indeed
 
     def _normalize_contract_type(self, raw_type: Optional[str]) -> str:
-        """Convertit les types de contrats JobSpy en termes français standard."""
+        """
+        Convertit les types de contrats JobSpy en termes français standard,
+        en traitant de façon robuste les formes simples et composites (ex: 'Fulltime, contract').
+        """
         if not raw_type or pd.isna(raw_type):
             return "Non spécifié"
-        clean_type = str(raw_type).strip().lower()
-        return CONTRACT_MAPPING.get(clean_type, clean_type.capitalize())
+
+        clean = str(raw_type).strip().lower()
+
+        # 1. Correspondance directe
+        if clean in CONTRACT_MAPPING:
+            return CONTRACT_MAPPING[clean]
+
+        tokens = [t.strip() for t in clean.replace("/", ",").split(",") if t.strip()]
+
+        # 2. Règles de priorité pour les contrats composites
+        if any(t in ["internship", "stage"] for t in tokens):
+            return "Stage"
+        if any(t in ["apprenticeship", "alternance", "apprentissage"] for t in tokens):
+            return "Alternance"
+        if any(t in ["contract", "freelance"] for t in tokens):
+            if any(t in ["parttime", "temps partiel"] for t in tokens):
+                return "CDD Temps partiel"
+            return "CDD / Freelance"
+        if any(t in ["temporary", "intérim", "interim"] for t in tokens):
+            return "Intérim"
+        if any(t in ["parttime", "temps partiel"] for t in tokens):
+            return "Temps partiel"
+        if any(t in ["fulltime", "permanent", "cdi"] for t in tokens):
+            return "CDI"
+
+        return clean.capitalize()
 
     def search_jobs(
         self,
