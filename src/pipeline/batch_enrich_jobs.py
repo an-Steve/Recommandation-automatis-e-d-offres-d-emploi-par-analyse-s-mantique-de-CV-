@@ -40,9 +40,11 @@ def run_batch_enrichment(
     """
     db = SessionLocal()
     try:
-        # Sélection de toutes les offres sans compétences renseignées
+        # Sélection de toutes les offres sans compétences renseignées (vides ou 'Non spécifié')
         pending_jobs = db.query(Offre).filter(
-            (Offre.competences_necessaires == []) | (Offre.competences_necessaires == None)
+            (Offre.competences_necessaires == []) |
+            (Offre.competences_necessaires == None) |
+            (Offre.competences_necessaires == ["Non spécifié"])
         ).order_by(Offre.created_at.desc()).all()
 
         total_pending = len(pending_jobs)
@@ -97,8 +99,8 @@ def run_batch_enrichment(
         if auto_reindex and enriched_job_ids:
             logger.info(f"🔄 Vectorisation incrémentale ciblée de {len(enriched_job_ids)} offre(s) dans ChromaDB...")
             from src.pipeline.job_indexer import JobIndexer
-            # batch_size=1 impératif sur CPU pour éviter tout ReadTimeout Ollama (>300s)
-            indexer = JobIndexer(batch_size=1)
+            # FastEmbed ONNX C++ optimise le calcul par lots de 8
+            indexer = JobIndexer(batch_size=8)
             indexer.index_jobs_by_ids(enriched_job_ids)
             logger.info("✅ ChromaDB synchronisé avec succès !")
 

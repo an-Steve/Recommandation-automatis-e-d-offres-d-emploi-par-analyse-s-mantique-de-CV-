@@ -58,7 +58,7 @@ class DailyJobScraper:
         limit_per_source: int = 20,
         location: str = "France",
         auto_enrich: bool = True,
-        enrich_limit: int = 3,
+        enrich_limit: int = 0,  # 0 = enrichissement illimité (100% des nouvelles offres)
         auto_enrich_adzuna: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """
@@ -216,9 +216,11 @@ class DailyJobScraper:
             enricher = JobEnricher()
             db = SessionLocal()
             try:
-                # Cible en priorité les offres non enrichies
+                # Cible en priorité les offres non enrichies (vides ou 'Non spécifié')
                 query_enrich = db.query(Offre).filter(
-                    (Offre.competences_necessaires == []) | (Offre.competences_necessaires == None)
+                    (Offre.competences_necessaires == []) |
+                    (Offre.competences_necessaires == None) |
+                    (Offre.competences_necessaires == ["Non spécifié"])
                 ).order_by(Offre.created_at.desc())
 
                 if enrich_limit > 0 and enrich_limit < save_stats["saved"]:

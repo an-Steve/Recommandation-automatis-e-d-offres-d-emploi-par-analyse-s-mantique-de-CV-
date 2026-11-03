@@ -215,7 +215,7 @@ def scrape_daily_jobs():
     limit_per_source = data.get("limit_per_source", 20)
     location = data.get("location", "France")
     auto_enrich = data.get("auto_enrich", data.get("auto_enrich_adzuna", True))
-    enrich_limit = data.get("enrich_limit", 3)
+    enrich_limit = data.get("enrich_limit", 0)  # 0 = enrichissement illimité (100% des offres collectées)
 
     try:
         daily_scraper = DailyJobScraper()
