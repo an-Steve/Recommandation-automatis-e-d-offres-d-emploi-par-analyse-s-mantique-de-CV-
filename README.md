@@ -1,22 +1,18 @@
 # <u>Recommandation Sémantique d'Offres d'Emploi par Analyse de CV</u>
 
 > **Projet Master 2 Intelligence Artificielle - Université Paris 8**  
-> **Composants** : Document AI (Docling), Ingestion Multi-Sources (JobSpy, Adzuna), Traitement NLP Déterministe (spaCy fr_core_news_sm), Extraction Zero-Shot Multi-Secteurs (GLiNER multi-v2.1), Embeddings Denses (ChromaDB + Ollama), Recherche Hybride & Reranking.
 
-Ce projet implémente un système complet de matching sémantique et explicable entre des CVs de candidats (PDF) et des offres d'emploi collectées sur le marché.
+Ce projet implémente un système complet de matching sémantique et explicable entre des CVs de candidats (PDF) et des offres d'emploi collectées sur le marché.>
+Ce document est le **guide complet d'installation et d'exécution** destiné aux membres de l'équipe pour reproduire intégralement la **Phase 0 (Setup & Socle)** et la **Phase 1 (Scraping, Nettoyage, Enrichissement LLM & Double Indexation)**.
 
-Ce document est le **guide complet d'installation et d'exécution** destiné aux membres de l'équipe pour reproduire intégralement la **Phase 0 (Setup & Socle)** et la **Phase 1 (Scraping, Nettoyage NLP Cascade 2 Niveaux, Extraction GLiNER Zero-Shot & Double Indexation)**.
-
-## Membres du projet :
+##  Membres du projet :
 
 | Nom et prénom |
 |---|
 | <u>ANTON NELCON Steve</u> &nbsp; \| &nbsp; <u>LIMACHE Adrien</u> &nbsp; \| &nbsp; <u>MOULAI HACENE Rania</u> &nbsp; \| &nbsp; <u>ZAID Ibtissam</u> &nbsp; \| &nbsp; <u>ZHENG Caroline</u> |
 
----
-
-## 1. Architecture Globale (Phase 0 & 1)
-> Réalisé du 10 au 13 octobre 2026 — Mis à jour avec GLiNER & spaCy en novembre 2026
+## 1. Architecture Globale (Phase 0 & 1) 
+> réalisé du 10 au  13 octobre 2026
 
 ```mermaid
 flowchart TD
@@ -59,43 +55,53 @@ flowchart TD
     CANON --> CHROMA
 ```
 
-### Explication du Pipeline & des Choix d'Architecture :
-
-1. **Ingestion Multi-Sources** :
-   * Collecte simultanée sur **Indeed**, **LinkedIn** (via JobSpy) et **Adzuna** (via API REST officielle).
-2. **Déduplication & Normalisation en Cascade 2 Niveaux** :
-   * Déduplication stricte par hachage **MD5** de l'intitulé, de l'entreprise et de la localisation.
-   * Découpage déterministe entre `description` (contexte d'entreprise, profil) et `mission` (actions opérationnelles) combinant des ancres Regex et l'analyse syntaxique **spaCy** (`fr_core_news_sm`).
-3. **Extraction Zero-Shot Universelle Multi-Secteurs (GLiNER)** :
-   * Remplace intégralement le prompting génératif Few-Shot pour garantir **0 hallucination**.
-   * Fonctionne par classification bidirectionnelle d'intervalles de texte (*span classification*) : chaque compétence extraite est mathématiquement issue mot pour mot de l'annonce.
-   * Gère dynamiquement les **8 secteurs d'activité** (`it_data`, `finance_compta`, `sante_medical`, `industrie_btp`, `rh_juridique`, `marketing_communication`, `commercial_vente`, `logistique_transport`).
-4. **Extraction Déterministe du Diplôme & de l'Expérience** :
-   * Moteur regex instantané (0 ms, 0 token) extrayant avec précision le niveau maximal (`Bac+X`) et les années requises.
-5. **Double Persistance Découplée** :
-   * **PostgreSQL 16** (`offres`) : requêtes relationnelles SQL, filtres stricts, métadonnées métier.
-   * **ChromaDB** (`offres`) : indexation vectorielle dense avec similarité cosinus pour la recherche sémantique avec les CVs.
-
+>Explication  de l'architecture :
+>
+>•Architecture du pipeline
+>
+>Ce projet collecte des offres d'emploi depuis plusieurs plateformes, les nettoie, les enrichit grâce à une IA locale, puis les indexe pour permettre une recherche sémantique. L'architecture se décompose en trois >blocs.
+>
+>•Sources d'offres d'emploi
+>Les offres proviennent de trois sources : **Indeed** et **LinkedIn**, récupérées via la bibliothèque JobSpy, et **Adzuna**, interrogée via son API REST.
+>
+>• Backend Flask (`main.py`, port 5000)
+>Les offres collectées sont reçues par les routes REST (`/api/jobs/*`), puis traitées en plusieurs étapes:
+>
+>1. **Déduplication** (`deduplication.py`) : un hash MD5 identifie les doublons afin de ne conserver qu'une seule version de chaque annonce.
+>2. **Nettoyage** (`JobTextSanitizer`) : un nettoyeur algorithmique supprime le bruit du texte (balises, éléments inutiles).
+>3. **Stockage relationnel** : les offres nettoyées sont enregistrées dans PostgreSQL.
+>4. **Enrichissement par IA locale** (`JobEnricher`) : le modèle Llama 3.2 1B, exécuté en local via Ollama, extrait et structure les informations clés de chaque offre.
+>5. **Gabarit canonique** (`job_indexer.py`) : chaque offre enrichie est mise sous un format uniforme et structuré, prêt à être indexé.
+>
+>•Socle de stockage découplé
+>Les données sont réparties entre trois composants, chacun dédié à un usage précis :
+>
+>- **PostgreSQL 16** (base `projet_cv_db`, table `offres`) : stockage relationnel des offres.
+>- **ChromaDB** (collection `offres`, distance cosinus) : base vectorielle persistante pour la recherche sémantique.
+>- **Ollama** (`localhost:11434`) : runtime local qui fournit les modèles `all-minilm` (embeddings) et `llama3.2:1b` (enrichissement).
+>
+>•En résumé
+>Les offres sont collectées, dédupliquées, nettoyées et stockées dans PostgreSQL, puis enrichies par une IA exécutée en local et indexées dans ChromaDB. Cette séparation entre données relationnelles et données >vectorielles permet à la fois des requêtes SQL classiques et une recherche sémantique (par exemple pour faire correspondre des offres à un CV), sans qu'aucune donnée ne soit envoyée à un service externe d'IA.
+>**Composants** : Document AI (Docling), Ingestion Multi-Sources (JobSpy, Adzuna), Embeddings Denses (ChromaDB + Ollama), IA Générative Locale (Llama 3.2 1B), Recherche Hybride & Reranking.
 ---
-
 ## 2. Prérequis Système Obligatoires
 
 Avant de commencer l'installation, assurez-vous d'avoir installé sur votre machine :
 
 | Logo | Outil | Version requise | Rôle |
 | :---: | :--- | :--- | :--- |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" width="35" alt="Python"> | **Python** | **3.11.x** | Compatibilité PyTorch, ChromaDB, spaCy, GLiNER et Docling. |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" width="35" alt="Python"> | **Python** | **3.11.x** | Compatibilité avec PyTorch, ChromaDB et Docling. |
 | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" width="35" alt="PostgreSQL"> | **PostgreSQL** | **16.x** + pgAdmin 4 | Base de données relationnelle (`projet_cv_db`). |
-| <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/ollama.svg" width="35" alt="Ollama"> | **Ollama** | Dernière version | Exécution locale des modèles d'embeddings (nomic-embed-text / bge-m3). |
+| <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/ollama.svg" width="35" alt="Ollama"> | **Ollama** | Dernière version | Exécution locale des modèles LLM et d'embeddings. |
 | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg" width="35" alt="Git"> | **Git** | **2.x+** | Gestion de versions du projet. |
+
 
 | Technologie | Technologie | Technologie |
 | :---: | :---: | :---: |
 | Python 3.11 | Flask | PostgreSQL 16 |
-| SQLAlchemy | ChromaDB | GLiNER Zero-Shot |
-| spaCy NLP | nomic-embed-text | Pydantic |
-| JobSpy | API Adzuna | Docling (IBM) |
-
+| SQLAlchemy | ChromaDB | Ollama |
+| all-MiniLM | Llama 3.2 1B | Pydantic |
+| JobSpy | API Adzuna | Docling |
 ---
 
 ## 3. Guide d'Installation Pas-à-Pas (Phase 0 & 1)
