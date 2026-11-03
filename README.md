@@ -2,8 +2,8 @@
 
 > **Projet Master 2 Intelligence Artificielle - Université Paris 8**  
 
-Ce projet implémente un système complet de matching sémantique et explicable entre des CVs de candidats (PDF) et des offres d'emploi collectées sur le marché.>
-Ce document est le **guide complet d'installation et d'exécution** destiné aux membres de l'équipe pour reproduire intégralement la **Phase 0 (Setup & Socle)** et la **Phase 1 (Scraping, Nettoyage, Enrichissement LLM & Double Indexation)**.
+Ce projet implémente un système complet de matching sémantique et explicable entre des CVs de candidats (PDF) et des offres d'emploi collectées sur le marché.
+Ce document est le **guide complet d'installation et d'exécution** destiné aux membres de l'équipe pour reproduire intégralement la **Phase 0 (Setup & Socle)** et la **Phase 1 (Scraping, Nettoyage, Enrichissement Zero-Shot & Double Indexation Haute Performance CPU)**.
 
 ##  Membres du projet :
 
@@ -12,7 +12,7 @@ Ce document est le **guide complet d'installation et d'exécution** destiné aux
 | <u>ANTON NELCON Steve</u> &nbsp; \| &nbsp; <u>LIMACHE Adrien</u> &nbsp; \| &nbsp; <u>MOULAI HACENE Rania</u> &nbsp; \| &nbsp; <u>ZAID Ibtissam</u> &nbsp; \| &nbsp; <u>ZHENG Caroline</u> |
 
 ## 1. Architecture Globale (Phase 0 & 1) 
-> réalisé du 10 au  13 octobre 2026
+> Réalisé en octobre 2026 - Optimisé CPU & C++ en novembre 2026
 
 ```mermaid
 flowchart TD
@@ -41,10 +41,11 @@ flowchart TD
         CANON["Gabarit Canonique Structuré\n(clean_job_text_for_embedding)"]
     end
 
-    subgraph STORAGE["Socle de Stockage Découplé"]
+    subgraph STORAGE["Socle de Stockage Découplé & Moteur In-Process"]
         PG[("PostgreSQL 16 (projet_cv_db)\nTable relationnelle 'offres'")]
         CHROMA[("ChromaDB Persistant\nCollection dense 'offres' (Cosine)")]
-        OLLAMA["Ollama Runtime (localhost:11434)\nall-minilm / nomic-embed-text"]
+        FASTEMBED["FastEmbed ONNX C++ (In-Process)\nnomic-ai/nomic-embed-text-v1.5 (768d)\n~500 ms/doc (0 timeout HTTP)"]
+        OLLAMA["Ollama Runtime (localhost:11434)\nllama3.2:1b (Synthèse & Matching LLM)"]
     end
 
     SOURCES --> API
@@ -52,61 +53,55 @@ flowchart TD
     PG --> EXTRACT
     GLIN --> CANON
     HEUR --> CANON
-    CANON --> CHROMA
+    CANON --> FASTEMBED --> CHROMA
 ```
 
->Explication  de l'architecture :
+> **Explication de l'architecture :**
 >
->•Architecture du pipeline
+> • **Architecture du pipeline** :
+> Ce projet collecte des offres d'emploi depuis plusieurs plateformes, les nettoie, les enrichit grâce à une IA locale déterministe, puis les indexe pour permettre une recherche sémantique ultra-rapide sur CPU.
 >
->Ce projet collecte des offres d'emploi depuis plusieurs plateformes, les nettoie, les enrichit grâce à une IA locale, puis les indexe pour permettre une recherche sémantique. L'architecture se décompose en trois >blocs.
+> • **Sources d'offres d'emploi** :
+> Les annonces proviennent de trois sources : **Indeed** et **LinkedIn** via JobSpy, et **Adzuna** via son API REST officielle.
 >
->•Sources d'offres d'emploi
->Les offres proviennent de trois sources : **Indeed** et **LinkedIn**, récupérées via la bibliothèque JobSpy, et **Adzuna**, interrogée via son API REST.
+> • **Backend Flask (`main.py`, port 5000)** :
+> 1. **Déduplication** (`deduplication.py`) : un hash MD5 identifie les doublons pour ne conserver qu'une seule version de chaque annonce.
+> 2. **Normalisation en cascade** (`JobTextSanitizer`) : dissociation rigoureuse entre `description` et `mission` via Regex + spaCy NLP syntaxique.
+> 3. **Stockage relationnel** : enregistrement des offres brutes et nettoyées dans PostgreSQL.
+> 4. **Enrichissement Zero-Shot 0 hallucination** (`gliner_extractor.py`) : le modèle **GLiNER multi-v2.1** extrait les compétences verbatim selon une ontologie de 8 secteurs d'activité, complété par une heuristique regex pour le diplôme (Bac+X) et l'expérience.
+> 5. **Gabarit canonique & Indexation ONNX C++** (`job_indexer.py`) : vectorisation directe en mémoire via **FastEmbed C++** (`nomic-ai/nomic-embed-text-v1.5`, 768 dimensions), garantissant une similarité cosinus optimale avec les futurs profils CV.
 >
->• Backend Flask (`main.py`, port 5000)
->Les offres collectées sont reçues par les routes REST (`/api/jobs/*`), puis traitées en plusieurs étapes:
->
->1. **Déduplication** (`deduplication.py`) : un hash MD5 identifie les doublons afin de ne conserver qu'une seule version de chaque annonce.
->2. **Nettoyage** (`JobTextSanitizer`) : un nettoyeur algorithmique supprime le bruit du texte (balises, éléments inutiles).
->3. **Stockage relationnel** : les offres nettoyées sont enregistrées dans PostgreSQL.
->4. **Enrichissement par IA locale** (`JobEnricher`) : le modèle Llama 3.2 1B, exécuté en local via Ollama, extrait et structure les informations clés de chaque offre.
->5. **Gabarit canonique** (`job_indexer.py`) : chaque offre enrichie est mise sous un format uniforme et structuré, prêt à être indexé.
->
->•Socle de stockage découplé
->Les données sont réparties entre trois composants, chacun dédié à un usage précis :
->
->- **PostgreSQL 16** (base `projet_cv_db`, table `offres`) : stockage relationnel des offres.
->- **ChromaDB** (collection `offres`, distance cosinus) : base vectorielle persistante pour la recherche sémantique.
->- **Ollama** (`localhost:11434`) : runtime local qui fournit les modèles `all-minilm` (embeddings) et `llama3.2:1b` (enrichissement).
->
->•En résumé
->Les offres sont collectées, dédupliquées, nettoyées et stockées dans PostgreSQL, puis enrichies par une IA exécutée en local et indexées dans ChromaDB. Cette séparation entre données relationnelles et données >vectorielles permet à la fois des requêtes SQL classiques et une recherche sémantique (par exemple pour faire correspondre des offres à un CV), sans qu'aucune donnée ne soit envoyée à un service externe d'IA.
->**Composants** : Document AI (Docling), Ingestion Multi-Sources (JobSpy, Adzuna), Embeddings Denses (ChromaDB + Ollama), IA Générative Locale (Llama 3.2 1B), Recherche Hybride & Reranking.
+> • **Socle de stockage découplé** :
+> - **PostgreSQL 16** (base `projet_cv_db`, table `offres`) : stockage relationnel, filtres booléens, audit qualité.
+> - **ChromaDB** (collection `offres`, distance cosinus) : base vectorielle persistante.
+> - **FastEmbed ONNX Runtime** : moteur C++ in-process remplaçant les requêtes HTTP, divisant le temps de calcul par 50 sans saturer la RAM.
+> - **Ollama** (`localhost:11434`) : runtime LLM local dédié aux synthèses et explications (Phase 2 & 3).
+
 ---
+
 ## 2. Prérequis Système Obligatoires
 
 Avant de commencer l'installation, assurez-vous d'avoir installé sur votre machine :
 
 | Logo | Outil | Version requise | Rôle |
 | :---: | :--- | :--- | :--- |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" width="35" alt="Python"> | **Python** | **3.11.x** | Compatibilité avec PyTorch, ChromaDB et Docling. |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" width="35" alt="Python"> | **Python** | **3.11.x** | Compatibilité garantie avec PyTorch, FastEmbed, ONNX Runtime et Docling. |
 | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" width="35" alt="PostgreSQL"> | **PostgreSQL** | **16.x** + pgAdmin 4 | Base de données relationnelle (`projet_cv_db`). |
-| <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/ollama.svg" width="35" alt="Ollama"> | **Ollama** | Dernière version | Exécution locale des modèles LLM et d'embeddings. |
+| <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/ollama.svg" width="35" alt="Ollama"> | **Ollama** | Dernière version | Inférence des modèles LLM de génération (Llama 3.2). |
 | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg" width="35" alt="Git"> | **Git** | **2.x+** | Gestion de versions du projet. |
-
 
 | Technologie | Technologie | Technologie |
 | :---: | :---: | :---: |
-| Python 3.11 | Flask | PostgreSQL 16 |
-| SQLAlchemy | ChromaDB | Ollama |
-| all-MiniLM | Llama 3.2 1B | Pydantic |
-| JobSpy | API Adzuna | Docling |
+| Python 3.11 | Flask 3.0+ | PostgreSQL 16 |
+| FastEmbed (ONNX C++) | ChromaDB (Vector Store) | GLiNER Zero-Shot |
+| spaCy (NLP Syntaxique) | SQLAlchemy 2.0+ | Pydantic v2 |
+| JobSpy | API Adzuna | Docling (Phase 2) |
+
 ---
 
 ## 3. Guide d'Installation Pas-à-Pas (Phase 0 & 1)
 
-### Étape 1 : Cloner le dépôt et récupérer la branche Phase 1
+### Étape 1 : Cloner le dépôt et se placer sur la branche
 
 ```powershell
 git clone -b phase1_scrappe_offre <URL_DU_REPO_GITHUB>
@@ -134,27 +129,38 @@ Le pipeline normaliseur utilise le modèle français compact de spaCy pour l'ext
 python -m spacy download fr_core_news_sm
 ```
 
-### Étape 4 : Démarrer et configurer Ollama
+### Étape 3.ter : Initialiser le dossier local des modèles NLP (`models/`)
+
+Pour inspecter les modèles directement dans VS Code tout en protégeant le dépôt GitHub grâce au `.gitignore` :
+```powershell
+python scripts/sync_models_local.py
+```
+> [!NOTE]
+> Ce script synchronise ou télécharge les poids ONNX de FastEmbed (`nomic-ai/nomic-embed-text-v1.5`) et GLiNER dans le dossier `./models/` de votre projet. Les fichiers binaires volumineux sont automatiquement exclus de Git via `.gitignore`.
+
+### Étape 4 : Démarrer et configurer Ollama (pour les LLM)
 
 1. Assurez-vous qu'Ollama est démarré sur votre machine.
-2. Téléchargez le modèle d'embedding utilisé par ChromaDB :
+2. Téléchargez le modèle LLM pour la Phase 2 :
    ```powershell
-   ollama pull nomic-embed-text
+   ollama pull llama3.2:1b
    ```
 
 ### Étape 5 : Configurer les variables d'environnement (`.env`)
 
-Copiez le modèle `.env.example` vers `.env` et adaptez les identifiants :
+Copiez le modèle `.env.example` vers `.env` et adaptez vos identifiants :
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Vérifiez notamment votre chaîne de connexion PostgreSQL :
+Vérifiez les paramètres clés dans votre `.env` :
 ```env
 DATABASE_URL="postgresql://postgres:VOTRE_MOT_DE_PASSE@127.0.0.1:5432/projet_cv_db"
+MODELS_DIR="./models"
+EMBEDDING_PROVIDER="fastembed"
+EMBEDDING_MODEL_NAME="nomic-ai/nomic-embed-text-v1.5"
 OLLAMA_BASE_URL="http://localhost:11434"
-EMBEDDING_PROVIDER="ollama"
-EMBEDDING_MODEL_NAME="nomic-embed-text"
+LLM_EXTRACTION_MODEL="llama3.2:1b"
 ```
 
 ---
@@ -165,9 +171,9 @@ Lancez le script d'initialisation du socle :
 ```powershell
 python src/database/init_db.py
 ```
-* **PostgreSQL** : Crée la base de données `projet_cv_db` si nécessaire et génère les tables (`offres`, `cv_users`, `evaluations`).
-* **ChromaDB** : Initialise la collection vectorielle persistante `offres` avec distance cosinus.
-* **Ollama** : Valide la connectivité locale.
+* **PostgreSQL** : Crée la base de données `projet_cv_db` si nécessaire et génère les tables relationnelles (`offres`, `cv_users`, `evaluations`).
+* **ChromaDB** : Initialise la collection vectorielle persistante `offres` avec métrique de similarité cosinus.
+* **FastEmbed** : Vérifie la présence du moteur C++ ONNX local.
 
 ---
 
@@ -225,15 +231,23 @@ python src/pipeline/batch_enrich_jobs.py
 
 ---
 
-### 5. Indexation Vectorielle Canonique dans ChromaDB (CPU-Protected)
-Pour vectoriser les offres enrichies en lots de 1 par 1 (évitant tout timeout HTTP) :
+### 5. Indexation Vectorielle Haute Performance (FastEmbed ONNX C++)
+Pour vectoriser et indexer les offres enrichies dans ChromaDB par lots ultra-rapides :
 ```powershell
 python src/pipeline/job_indexer.py
 ```
+* **Performance** : ~500 ms par offre sur CPU (contre 25 à 30 secondes via Ollama HTTP).
+* Zéro timeout réseau, synchronisation automatique de l'état `is_indexed = True` dans PostgreSQL.
 
 ---
 
 ### 6. Tester la Recherche Sémantique Vectorielle
+Vous pouvez tester directement la recherche sémantique via le script de test :
+```powershell
+python tests/test_fastembed_vector_store.py
+```
+
+Ou via l'API REST Flask :
 ```powershell
 Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/jobs/search-vector" `
   -Method Post `
@@ -248,10 +262,15 @@ Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/jobs/search-vector" `
 ```
 Projet_CV/
 ├── main.py                             # Point d'entrée du serveur Backend Flask (:5000)
-├── requirements.txt                     # Dépendances Python (spaCy, GLiNER, ChromaDB...)
+├── requirements.txt                     # Dépendances Python (FastEmbed, GLiNER, ChromaDB...)
 ├── .env.example                         # Modèle de variables d'environnement
-├── .gitignore                           # Fichiers exclus du versionnement Git
+├── .gitignore                           # Fichiers exclus du versionnement Git (models/, data/, .env...)
 ├── README.md                            # Ce guide complet d'installation et de référence
+│
+├── models/                              # Modèles NLP locaux (exclus de Git, visibles dans VS Code)
+│   ├── .gitkeep                         # Maintient le dossier dans le dépôt sans les poids
+│   ├── fastembed/                       # Modèles ONNX C++ (nomic-embed-text-v1.5)
+│   └── huggingface/                     # Poids GLiNER Zero-Shot multi-v2.1
 │
 ├── docs/                                # Documentation technique et rapports d'architecture
 │   ├── ARCHITECTURE.md                  # Schémas d'architecture globale et flux de données
@@ -265,20 +284,21 @@ Projet_CV/
 │   ├── phase0.md                        # Documentation historique Phase 0 (Setup)
 │   └── phase1.md                        # Documentation historique Phase 1 (Ingestion)
 │
-├── scripts/                             # Scripts de maintenance et migrations de base
+├── scripts/                             # Scripts de maintenance, migration et utilitaires
+│   ├── sync_models_local.py             # Synchronisation locale des modèles NLP dans ./models/
 │   ├── migrate_split_missions.py        # Migration de découpage 'description' vs 'mission'
 │   ├── migrate_contracts_and_skills.py  # Normalisation contrats composites & nettoyage compétences
 │   └── test_spacy_split_preview.py      # Prévisualisation visuelle du normaliseur spaCy
 │
 ├── src/
-│   ├── config.py                        # Configuration Pydantic Settings & variables .env
+│   ├── config.py                        # Configuration Pydantic Settings & gestion du dossier models/
 │   ├── api/
 │   │   ├── __init__.py
 │   │   └── routes.py                    # Endpoints REST (/api/jobs/*, /api/health)
 │   ├── database/
 │   │   ├── db_session.py                # Session & Engine SQLAlchemy (PostgreSQL)
 │   │   ├── sql_models.py                # Modèles relationnels (Offre, CVUser, Evaluation)
-│   │   ├── vector_store.py              # Client persistant ChromaDB (Collection 'offres')
+│   │   ├── vector_store.py              # Intégration FastEmbed ONNX C++ & ChromaDB
 │   │   └── export_chroma.py             # Script d'export JSON pour audit qualité
 │   ├── parsers/
 │   │   ├── gliner_extractor.py          # Extracteur Zero-Shot GLiNER multi-secteurs (0 hallucination)
@@ -287,7 +307,7 @@ Projet_CV/
 │   ├── pipeline/
 │   │   ├── deduplication.py             # Hachage MD5 et détection de doublons
 │   │   ├── job_normalizer.py            # Normaliseur cascade 2 niveaux (Regex + spaCy NLP)
-│   │   ├── job_indexer.py               # Constructeur du template canonique & indexeur ChromaDB (batch=1)
+│   │   ├── job_indexer.py               # Constructeur canonique & indexeur vectoriel par lots
 │   │   └── batch_enrich_jobs.py         # Worker batch d'enrichissement GLiNER
 │   ├── scrapers/
 │   │   ├── adzuna_scraper.py            # Connecteur API REST Adzuna
@@ -297,6 +317,7 @@ Projet_CV/
 │       └── ollama_client.py             # Client HTTP Ollama résilient
 │
 ├── tests/
+│   ├── test_fastembed_vector_store.py   # Test unitaire et benchmark similarité cosinus FastEmbed
 │   ├── test_gliner_multisector.py       # Benchmark multi-secteurs & anti-hallucination GLiNER
 │   └── ...                              # Autres suites de tests unitaires
 │
