@@ -4,6 +4,7 @@ Worker d'Indexation Vectorielle par Lots (PostgreSQL -> Ollama bge-m3 -> ChromaD
 """
 
 import logging
+import re
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 
@@ -16,6 +17,57 @@ from src.pipeline.deduplication import filter_existing_jobs
 from src.pipeline.job_normalizer import create_sql_offre_from_raw
 
 logger = logging.getLogger(__name__)
+
+# Marqueurs de fin de texte (bruit RH, mentions légales, RGPD, avantages génériques)
+BOILERPLATE_CUTOFF_PATTERNS = [
+    r"processus\s+de\s+recrutement",
+    r"mentions?\s+l[eé]gales?",
+    r"[aà]\s+comp[eé]tences?\s+[eé]gales?",
+    r"politique\s+de\s+confidentialit[eé]",
+    r"conform[eé]ment\s+[aà]\s+la\s+r[eé]glementation\s+rgpd",
+    r"tous\s+nos\s+postes\s+sont\s+ouverts\s+aux\s+personnes\s+en\s+situation\s+de\s+handicap",
+]
+
+
+def clean_job_text_for_embedding(raw_text: str, max_chars: int = 800) -> str:
+    """
+    Nettoie une description ou mission d'offre d'emploi avant vectorisation :
+    1. Coupe les blocs de fin non pertinents (mentions légales, RGPD, processus RH).
+    2. Normalise les espaces et sauts de ligne multiples.
+    3. Plafonne à `max_chars` caractères en ciblant en priorité le profil/missions.
+    """
+    if not raw_text:
+        return ""
+
+    text = raw_text.strip()
+
+    # 1. Suppression des pieds de page légaux / RH (si situés après les 200 premiers caractères)
+    lower_text = text.lower()
+    for pattern in BOILERPLATE_CUTOFF_PATTERNS:
+        match = re.search(pattern, lower_text)
+        if match and match.start() > 200:
+            text = text[: match.start()].strip()
+            lower_text = text.lower()
+
+    # 2. Normalisation des espaces et lignes vides multiples
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = re.sub(r"[ \t]{2,}", " ", text)
+
+    if len(text) <= max_chars:
+        return text
+
+    # 3. Si le texte reste long, on cible le cœur métier (missions / profil / compétences)
+    core_anchors = [
+        r"(vos\s+missions|missions\s+principales|descriptif\s+du\s+poste|le\s+poste)",
+        r"(profil\s+recherch[eé]|votre\s+profil|comp[eé]tences\s+requises|pr[eé]requis|qualifications)",
+    ]
+    for anchor in core_anchors:
+        match = re.search(anchor, text.lower())
+        if match:
+            start_idx = max(0, match.start() - 30)
+            return text[start_idx : start_idx + max_chars].strip() + "..."
+
+    return text[:max_chars].strip() + "..."
 
 
 def build_canonical_job_document(job: Offre) -> str:
@@ -43,13 +95,16 @@ def build_canonical_job_document(job: Offre) -> str:
         f"[NIVEAU D'ÉTUDES & EXPÉRIENCE] : Diplôme {diploma_str} | Expérience minimale {exp_str}",
     ]
 
-    clean_mission = (job.mission or "").strip()
-    clean_desc = (job.description or "").strip()
+    raw_mission = (job.mission or "").strip()
+    raw_desc = (job.description or "").strip()
+
+    clean_mission = clean_job_text_for_embedding(raw_mission, max_chars=500)
+    clean_desc = clean_job_text_for_embedding(raw_desc, max_chars=800)
 
     if clean_mission:
         lines.append(f"[MISSIONS PRINCIPALES] :\n{clean_mission}")
 
-    if clean_desc and clean_desc != clean_mission:
+    if raw_desc and raw_desc != raw_mission and clean_desc:
         lines.append(f"[PROFIL RECHERCHÉ & QUALIFICATIONS] :\n{clean_desc}")
     elif not clean_mission and clean_desc:
         lines.append(f"[DESCRIPTION DU POSTE] :\n{clean_desc}")
@@ -62,7 +117,7 @@ class JobIndexer:
     Gère la persistance brute dans PostgreSQL et l'indexation vectorielle via Ollama.
     """
 
-    def __init__(self, batch_size: int = 5):
+    def __init__(self, batch_size: int = 1):
         self.batch_size = batch_size
         self.collection = get_offres_collection()
 
@@ -262,3 +317,16 @@ class JobIndexer:
             raise e
         finally:
             db.close()
+
+
+if __name__ == "__main__":
+    import sys
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    print("=" * 70)
+    print("⚡ INDEXATION VECTORIELLE CHROMADB (LOTS DE 1 PAR 1)")
+    print("=" * 70)
+    worker = JobIndexer(batch_size=1)
+    worker.index_pending_jobs()
