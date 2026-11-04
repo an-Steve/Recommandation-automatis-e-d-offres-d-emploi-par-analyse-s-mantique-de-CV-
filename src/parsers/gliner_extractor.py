@@ -53,46 +53,66 @@ class GlinerSkillExtractor:
     _INSTANCE: Optional["GlinerSkillExtractor"] = None
     _MODEL = None
 
-    # Ontologie sectorielle dynamique pour les 8 secteurs
+    # Ontologie sectorielle dynamique pour les 8 secteurs (Hard Skills + Soft Skills métier)
     SECTOR_ONTOLOGY: Dict[str, List[str]] = {
         "it_data": [
             "langage de programmation", "framework", "outil cloud",
-            "base de données", "logiciel", "technologie", "compétence technique"
-        ],
-        "finance_compta": [
-            "logiciel comptable", "norme financière", "compétence fiscale",
-            "outil financier", "audit", "méthode comptable"
-        ],
-        "rh_juridique": [
-            "logiciel SIRH", "droit social", "domaine juridique",
-            "processus RH", "recrutement", "réglementation"
-        ],
-        "marketing_communication": [
-            "outil marketing", "logiciel PAO", "levier d'acquisition",
-            "outil analytique", "compétence créative"
-        ],
-        "commercial_vente": [
-            "logiciel CRM", "technique de vente", "prospection",
-            "négociation", "compétence commerciale"
+            "base de données", "logiciel", "technologie", "compétence technique",
+            "rigueur", "autonomie", "résolution de problèmes", "esprit d'équipe"
         ],
         "sante_medical": [
             "acte de soin", "spécialité médicale", "logiciel médical",
-            "protocole de soin", "certification médicale"
+            "protocole de soin", "certification médicale", "diplôme d'état",
+            "écoute", "empathie", "sens relationnel", "patience", "gestion du stress", "bienveillance"
         ],
-        "logistique_transport": [
-            "caces", "logiciel WMS", "logiciel ERP",
-            "réglementation transport", "procédure logistique"
+        "btp_construction": [
+            "habilitation", "norme de sécurité", "logiciel CAO", "compétence chantier",
+            "conduite de travaux", "engin de chantier",
+            "rigueur", "sens des responsabilités", "réactivité", "organisation", "esprit d'équipe"
+        ],
+        "commerce_marketing": [
+            "logiciel CRM", "technique de vente", "prospection", "outil marketing",
+            "négociation", "compétence commerciale", "levier d'acquisition",
+            "aisance relationnelle", "force de persuasion", "sens du contact", "dynamisme", "écoute active"
+        ],
+        "commercial_vente": [
+            "logiciel CRM", "technique de vente", "prospection", "négociation",
+            "aisance relationnelle", "force de persuasion", "sens commercial"
+        ],
+        "finance_gestion": [
+            "logiciel comptable", "norme financière", "compétence fiscale", "outil financier",
+            "audit", "méthode comptable", "contrôle de gestion", "tableur",
+            "rigueur", "sens de la confidentialité", "esprit d'analyse", "précision", "organisation"
+        ],
+        "finance_compta": [
+            "logiciel comptable", "norme financière", "compétence fiscale", "outil financier",
+            "audit", "rigueur", "précision", "confidentialité"
+        ],
+        "industrie_ingenierie": [
+            "technique de fabrication", "maintenance industrielle", "logiciel CAO", "logiciel FAO",
+            "automatisme", "mécanique", "norme de qualité", "lean manufacturing",
+            "rigueur", "résolution de problème", "vigilance", "esprit d'équipe"
         ],
         "industrie_btp": [
-            "habilitation", "norme de sécurité", "logiciel CAO",
-            "technique de fabrication", "compétence chantier"
+            "habilitation", "norme de sécurité", "logiciel CAO", "technique de fabrication",
+            "rigueur", "sens des responsabilités"
+        ],
+        "rh_juridique": [
+            "logiciel SIRH", "droit social", "domaine juridique", "processus RH",
+            "recrutement", "réglementation", "droit du travail",
+            "sens de la confidentialité", "écoute active", "aisance relationnelle", "diplomatie"
+        ],
+        "general_autre": [
+            "compétence technique", "logiciel", "outil", "certification",
+            "polyvalence", "sens du service", "ponctualité", "autonomie", "rigueur"
         ],
     }
 
     # Labels de repli si le secteur n'est pas spécifié
     GENERIC_LABELS: List[str] = [
         "compétence technique", "logiciel", "outil", "certification",
-        "habilitation", "norme", "langage"
+        "habilitation", "norme", "langage", "qualité relationnelle",
+        "savoir-être", "soft skill", "autonomie", "rigueur"
     ]
 
     def __init__(self, model_name: str = DEFAULT_MODEL_NAME):
@@ -100,12 +120,16 @@ class GlinerSkillExtractor:
             from gliner import GLiNER
             target_path = resolve_gliner_model_path(model_name)
             logger.info(f"⏳ Chargement du modèle GLiNER multilingue depuis '{target_path}'...")
-            try:
-                # Tentative d'accélération ONNX si le fichier model.onnx est présent
-                GlinerSkillExtractor._MODEL = GLiNER.from_pretrained(target_path, load_onnx_model=True)
-                logger.info("✅ Modèle GLiNER chargé en mode ONNX Runtime.")
-            except Exception as e:
-                logger.debug(f"ONNX non disponible pour ce modèle ({e}), repli standard PyTorch...")
+            # Si model.onnx est présent localement, on active l'accélération ONNX, sinon chargement direct PyTorch
+            onnx_file = Path(target_path) / "model.onnx"
+            if onnx_file.exists():
+                try:
+                    GlinerSkillExtractor._MODEL = GLiNER.from_pretrained(target_path, load_onnx_model=True)
+                    logger.info("✅ Modèle GLiNER chargé en mode ONNX Runtime.")
+                except Exception as e:
+                    logger.debug(f"Erreur chargement ONNX ({e}), repli standard PyTorch...")
+                    GlinerSkillExtractor._MODEL = GLiNER.from_pretrained(target_path)
+            else:
                 GlinerSkillExtractor._MODEL = GLiNER.from_pretrained(target_path)
                 logger.info("✅ Modèle GLiNER prêt (PyTorch).")
         self.model = GlinerSkillExtractor._MODEL
