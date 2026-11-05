@@ -16,10 +16,12 @@ Ce document est le **guide complet d'installation et d'exécution** destiné aux
 
 ```mermaid
 flowchart TD
-    subgraph SOURCES["Sources d'Offres d'Emploi"]
+    subgraph SOURCES["Sources d'Offres d'Emploi Multi-Plateformes"]
         IND["Indeed (JobSpy)"]
         LNK["LinkedIn (JobSpy)"]
-        ADZ["Adzuna (API REST)"]
+        WTTJ["Welcome to the Jungle\n(API Algolia)"]
+        HW["HelloWork\n(JSON-LD enrichi)"]
+        ADZ["Adzuna (Optionnel/Déprécié)"]
     end
 
     subgraph BACKEND["Backend Flask (main.py :5000)"]
@@ -34,7 +36,7 @@ flowchart TD
         end
         
         subgraph EXTRACT["Extraction de Compétences & Critères (0 Hallucination)"]
-            GLIN["GLiNER Zero-Shot (gliner_multi-v2.1)\nOntologie Dynamique 8 Secteurs\n(Span Classification Verbatim)"]
+            GLIN["GLiNER Zero-Shot (gliner_multi-v2.1)\nOntologie Dynamique 8 Secteurs\n(Hard & Soft Skills Verbatim)"]
             HEUR["Heuristique Déterministe Regex\n(Niveau Bac+X & Années d'Expérience)"]
         end
         
@@ -48,27 +50,33 @@ flowchart TD
         OLLAMA["Ollama Runtime (localhost:11434)\nllama3.2:1b (Synthèse & Matching LLM)"]
     end
 
+    subgraph AUDIT["Évaluation & Robustesse (.agents/skills)"]
+        AUDITOR["Pipeline Auditor (scripts/audit_pipeline_robustness.py)\nMRR, Top-K, Tokens DeBERTa, Joignabilité URLs"]
+    end
+
     SOURCES --> API
     API --> DEDUP --> CASCADE --> PG
     PG --> EXTRACT
     GLIN --> CANON
     HEUR --> CANON
     CANON --> FASTEMBED --> CHROMA
+    PG -.-> AUDITOR
+    CHROMA -.-> AUDITOR
 ```
 
 > **Explication de l'architecture :**
 >
 > • **Architecture du pipeline** :
-> Ce projet collecte des offres d'emploi depuis plusieurs plateformes, les nettoie, les enrichit grâce à une IA locale déterministe, puis les indexe pour permettre une recherche sémantique ultra-rapide sur CPU.
+> Ce projet collecte des offres d'emploi depuis plusieurs grandes plateformes françaises et internationales, les nettoie, les enrichit grâce à une IA locale déterministe (GLiNER), puis les indexe pour permettre une recherche sémantique ultra-rapide sur CPU.
 >
 > • **Sources d'offres d'emploi** :
-> Les annonces proviennent de trois sources : **Indeed** et **LinkedIn** via JobSpy, et **Adzuna** via son API REST officielle.
+> Les annonces proviennent désormais de 4 sources majeures : **Indeed** et **LinkedIn** via JobSpy, **Welcome to the Jungle (WTTJ)** via l'API Algolia publique, et **HelloWork** via extraction de balises structurées JSON-LD (`JobPosting`). L'API Adzuna (dont les descriptions étaient tronquées à 400 caractères) a été remplacée par ce mix plus qualitatif.
 >
 > • **Backend Flask (`main.py`, port 5000)** :
-> 1. **Déduplication** (`deduplication.py`) : un hash MD5 identifie les doublons pour ne conserver qu'une seule version de chaque annonce.
+> 1. **Déduplication** (`deduplication.py`) : un hash MD5 déterministe identifie les doublons pour ne conserver qu'une seule version de chaque annonce.
 > 2. **Normalisation en cascade** (`JobTextSanitizer`) : dissociation rigoureuse entre `description` et `mission` via Regex + spaCy NLP syntaxique.
 > 3. **Stockage relationnel** : enregistrement des offres brutes et nettoyées dans PostgreSQL.
-> 4. **Enrichissement Zero-Shot 0 hallucination** (`gliner_extractor.py`) : le modèle **GLiNER multi-v2.1** extrait les compétences verbatim selon une ontologie de 8 secteurs d'activité, complété par une heuristique regex pour le diplôme (Bac+X) et l'expérience.
+> 4. **Enrichissement Zero-Shot 0 hallucination** (`gliner_extractor.py`) : le modèle **GLiNER multi-v2.1** extrait les compétences techniques et comportementales (Hard & Soft Skills) verbatim selon une ontologie de 8 secteurs d'activité, complété par une heuristique regex pour le diplôme (Bac+X) et l'expérience.
 > 5. **Gabarit canonique & Indexation ONNX C++** (`job_indexer.py`) : vectorisation directe en mémoire via **FastEmbed C++** (`nomic-ai/nomic-embed-text-v1.5`, 768 dimensions), garantissant une similarité cosinus optimale avec les futurs profils CV.
 >
 > • **Socle de stockage découplé** :
@@ -95,7 +103,7 @@ Avant de commencer l'installation, assurez-vous d'avoir installé sur votre mach
 | Python 3.11 | Flask 3.0+ | PostgreSQL 16 |
 | FastEmbed (ONNX C++) | ChromaDB (Vector Store) | GLiNER Zero-Shot |
 | spaCy (NLP Syntaxique) | SQLAlchemy 2.0+ | Pydantic v2 |
-| JobSpy | API Adzuna | Docling (Phase 2) |
+| JobSpy & JobScraper | WTTJ (Algolia) & HelloWork (JSON-LD) | Docling (Phase 2) |
 
 ---
 
@@ -115,11 +123,12 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-### Étape 3 : Installer les dépendances du projet
+### Étape 3 : Installer les dépendances du projet & les scrapers
 
 ```powershell
 python -m pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
+pip install git+https://github.com/zeffut/jobscraper.git
 ```
 
 ### Étape 3.bis : Télécharger le modèle linguistique spaCy
@@ -190,13 +199,19 @@ python main.py
 ---
 
 ### 2. Collecte Quotidienne & Normalisation Multi-Sources
-Déclenchez la collecte sur les 3 sources (Adzuna, LinkedIn, Indeed) pour un secteur ciblé :
+Déclenchez la collecte sur l'ensemble des 4 plateformes pour tous les secteurs (ou un secteur ciblé) :
 ```powershell
 Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/jobs/scrape-daily" `
   -Method Post `
   -ContentType "application/json" `
-  -Body '{"secteur": "it_data", "hours_old": 24, "indeed_results": 15, "linkedin_results": 15, "adzuna_results": 15}'
+  -Body '{"secteur": "all", "limit_per_source": 10, "sources": ["wttj", "hellowork", "indeed", "linkedin"]}'
 ```
+
+* **Paramètres de la requête** :
+  * `secteur` : `"all"` pour balayer automatiquement les 8 secteurs d'activité de l'ontologie, ou le code d'un secteur unique (`"it_data"`, `"sante_medical"`, `"btp_construction"`, `"commerce_marketing"`, `"finance_gestion"`, `"industrie_ingenierie"`, `"rh_juridique"`, `"general_autre"`).
+  * `limit_per_source` : Nombre d'offres ciblées par source et par secteur (ex: `10`). Pour `all`, 10 offres $\times$ 8 secteurs = **80 offres max par plateforme**.
+  * `sources` : Liste des plateformes à interroger : `["wttj", "hellowork", "indeed", "linkedin"]` (l'ancienne source `"adzuna"` reste supportée optionnellement).
+  * `auto_enrich` : `true` (par défaut) pour enchaîner immédiatement la déduplication MD5, l'extraction Zero-Shot GLiNER et l'indexation ChromaDB.
 
 ---
 
@@ -257,6 +272,23 @@ Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/jobs/search-vector" `
 
 ---
 
+### 7. Audit de Robustesse du Pipeline & Métriques NLP / Vectorielles (Skill Gemini CLI)
+
+Un outil complet de benchmark et d'audit a été développé pour évaluer de bout en bout l'intégrité des données, la joignabilité réelle des annonces et les performances IA :
+```powershell
+python scripts/audit_pipeline_robustness.py --csv data-1793867529460.csv --output RAPPORT_AUDIT_PIPELINE.md
+```
+
+* **Indicateurs mesurés automatiquement** :
+  1. **Complétude du Dataset** : Vérification du taux de remplissage de 100% des colonnes et de l'isolation missions vs descriptions sur les 829 offres.
+  2. **Joignabilité URLs en direct** : Envoi de requêtes HTTP réelles sur un échantillon représentatif d'annonces (Indeed, LinkedIn, WTTJ, HelloWork) avec mesure de la latence réseau.
+  3. **Profilage GLiNER** : Temps d'inférence (ms/offre), comptage réel des tokens DeBERTa pour valider le respect du plafond de 384 tokens (0% de troncature), score de confiance moyen et répartition Hard Skills vs Soft Skills.
+  4. **Recherche Vectorielle ChromaDB** : Évaluation du **MRR (Mean Reciprocal Rank)**, de la **Top-1 / Top-3 / Top-5 Accuracy** sectorielle et de la latence cosinus sur des requêtes métiers.
+  5. **Score Global de Robustesse** : Note de synthèse sur 100 points enregistrée dans [`RAPPORT_AUDIT_PIPELINE.md`](./RAPPORT_AUDIT_PIPELINE.md).
+* **Skill Gemini CLI / Antigravity** : La définition du skill est disponible dans [`.agents/skills/pipeline-auditor/SKILL.md`](./.agents/skills/pipeline-auditor/SKILL.md).
+
+---
+
 ## 6. Structure Complète du Code Source
 
 ```
@@ -266,6 +298,12 @@ Projet_CV/
 ├── .env.example                         # Modèle de variables d'environnement
 ├── .gitignore                           # Fichiers exclus du versionnement Git (models/, data/, .env...)
 ├── README.md                            # Ce guide complet d'installation et de référence
+├── RAPPORT_AUDIT_PIPELINE.md            # Rapport d'audit de robustesse et benchmark de performance
+│
+├── .agents/                             # Configuration des extensions & compétences Gemini CLI / Antigravity
+│   └── skills/
+│       └── pipeline-auditor/
+│           └── SKILL.md                 # Skill d'audit automatisé et d'intégrité du pipeline
 │
 ├── models/                              # Modèles NLP locaux (exclus de Git, visibles dans VS Code)
 │   ├── .gitkeep                         # Maintient le dossier dans le dépôt sans les poids
@@ -285,6 +323,7 @@ Projet_CV/
 │   └── phase1.md                        # Documentation historique Phase 1 (Ingestion)
 │
 ├── scripts/                             # Scripts de maintenance, migration et utilitaires
+│   ├── audit_pipeline_robustness.py     # Moteur d'évaluation, test d'URLs en direct & MRR ChromaDB
 │   ├── sync_models_local.py             # Synchronisation locale des modèles NLP dans ./models/
 │   ├── migrate_split_missions.py        # Migration de découpage 'description' vs 'mission'
 │   ├── migrate_contracts_and_skills.py  # Normalisation contrats composites & nettoyage compétences
@@ -301,8 +340,8 @@ Projet_CV/
 │   │   ├── vector_store.py              # Intégration FastEmbed ONNX C++ & ChromaDB
 │   │   └── export_chroma.py             # Script d'export JSON pour audit qualité
 │   ├── parsers/
-│   │   ├── gliner_extractor.py          # Extracteur Zero-Shot GLiNER multi-secteurs (0 hallucination)
-│   │   ├── job_enricher.py              # Façade d'enrichissement unifiée
+│   │   ├── gliner_extractor.py          # Extracteur Zero-Shot GLiNER multi-secteurs (Hard & Soft Skills)
+│   │   ├── job_enricher.py              # Façade d'enrichissement unifiée & condensation ciblée
 │   │   └── docling_parser.py            # [Phase 2] Parseur de CVs PDF (Docling IBM)
 │   ├── pipeline/
 │   │   ├── deduplication.py             # Hachage MD5 et détection de doublons
@@ -310,9 +349,10 @@ Projet_CV/
 │   │   ├── job_indexer.py               # Constructeur canonique & indexeur vectoriel par lots
 │   │   └── batch_enrich_jobs.py         # Worker batch d'enrichissement GLiNER
 │   ├── scrapers/
-│   │   ├── adzuna_scraper.py            # Connecteur API REST Adzuna
+│   │   ├── jobscraper_connector.py      # Connecteur unifié Welcome to the Jungle (Algolia) & HelloWork (JSON-LD)
 │   │   ├── jobspy_scraper.py            # Scraper Indeed & LinkedIn via JobSpy
-│   │   └── daily_scraper.py             # Orchestrateur de collecte quotidienne multi-sources
+│   │   ├── daily_scraper.py             # Orchestrateur de collecte multi-sources (WTTJ, HelloWork, Indeed, LinkedIn)
+│   │   └── sector_mapping.py            # Ontologie des 8 secteurs et requêtes ciblées
 │   └── utils/
 │       └── ollama_client.py             # Client HTTP Ollama résilient
 │
