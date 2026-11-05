@@ -308,7 +308,7 @@ def create_sql_offre_from_raw(raw: Dict[str, Any]) -> Offre:
         competences_necessaires=raw.get("competences_necessaires", []),
         description=clean_desc,
         mission=clean_mission,
-        source_url=raw.get("source_url", ""),
+        source_url=str(raw.get("source_url") or "").strip(),
         source=str(raw.get("source", "unknown")).lower(),
         secteur=str(raw.get("secteur", "it_data")).lower(),
         date_posted=parsed_date,

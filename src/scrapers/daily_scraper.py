@@ -19,6 +19,7 @@ from typing import List, Dict, Any, Optional
 
 from src.scrapers.adzuna_scraper import AdzunaScraper
 from src.scrapers.jobspy_scraper import JobSpyScraper
+from src.scrapers.jobscraper_connector import JobScraperConnector
 from src.scrapers.sector_mapping import get_sector_config, list_supported_sectors
 from src.pipeline.job_indexer import JobIndexer
 
@@ -49,6 +50,7 @@ class DailyJobScraper:
     def __init__(self, batch_size_chroma: int = 8):
         self.indexer = JobIndexer(batch_size=batch_size_chroma)
         self.adzuna = AdzunaScraper(country="fr")
+        self.jobscraper = JobScraperConnector()
 
     def run_daily_pipeline(
         self,
@@ -66,8 +68,8 @@ class DailyJobScraper:
 
         :param target_date_str: Date sous format "YYYY-MM-DD" ou "DD/MM/YYYY" (défaut: aujourd'hui)
         :param sector_code: Code secteur (ex: "it_data", "sante_medical", "btp_construction")
-        :param sources: Liste des sources ["adzuna", "indeed", "linkedin"]
-        :param limit_per_source: Plafond par plateforme (15-20 conseillé)
+        :param sources: Liste des sources ["wttj", "hellowork", "indeed", "linkedin"]
+        :param limit_per_source: Plafond par plateforme (10-15 conseillé)
         :param location: Ville ou pays
         :return: Rapport statistique complet
         """
@@ -120,7 +122,7 @@ class DailyJobScraper:
             }
 
         sector_cfg = get_sector_config(sector_code)
-        target_sources = [s.lower() for s in (sources or ["adzuna", "indeed", "linkedin"])]
+        target_sources = [s.lower() for s in (sources or ["wttj", "hellowork", "indeed", "linkedin"])]
 
         # Calcul de la fraîcheur en jours par rapport à aujourd'hui
         today = date.today()
@@ -142,7 +144,75 @@ class DailyJobScraper:
         # 1 & 2. Collecte Multi-Plateformes avec Barre de Progression
         # ----------------------------------------------------------------------
         with tqdm(total=len(target_sources), desc="🌐 Collecte plateformes", unit="source") as pbar_sources:
-            # 1. Collecte ADZUNA
+            # 1. Collecte WELCOME TO THE JUNGLE (WTTJ) via Algolia
+            if "wttj" in target_sources:
+                pbar_sources.set_postfix_str("Interrogation Welcome to the Jungle...")
+                try:
+                    query_term = sector_cfg["default_query"]
+                    wttj_jobs = self.jobscraper.search_wttj(
+                        query=query_term,
+                        location=location,
+                        limit=limit_per_source,
+                        target_date_iso=target_iso,
+                    )
+                    for j in wttj_jobs:
+                        j["secteur"] = sector_code
+                    collected_jobs.extend(wttj_jobs)
+                    stats_per_source["wttj"] = len(wttj_jobs)
+                    pbar_sources.set_postfix_str(f"WTTJ: {len(wttj_jobs)} offres")
+                except Exception as e:
+                    logger.error(f"❌ Erreur lors de la collecte WTTJ : {e}")
+                finally:
+                    pbar_sources.update(1)
+
+            # 2. Collecte HELLOWORK via JSON-LD structuré
+            if "hellowork" in target_sources:
+                pbar_sources.set_postfix_str("Interrogation HelloWork...")
+                try:
+                    query_term = sector_cfg["default_query"]
+                    hw_jobs = self.jobscraper.search_hellowork(
+                        query=query_term,
+                        location=location,
+                        limit=limit_per_source,
+                        target_date_iso=target_iso,
+                    )
+                    for j in hw_jobs:
+                        j["secteur"] = sector_code
+                    collected_jobs.extend(hw_jobs)
+                    stats_per_source["hellowork"] = len(hw_jobs)
+                    pbar_sources.set_postfix_str(f"HelloWork: {len(hw_jobs)} offres")
+                except Exception as e:
+                    logger.error(f"❌ Erreur lors de la collecte HelloWork : {e}")
+                finally:
+                    pbar_sources.update(1)
+
+            # 3. Collecte JOBSPY (Indeed / LinkedIn)
+            jobspy_sites = [s for s in target_sources if s in ["indeed", "linkedin"]]
+            if jobspy_sites:
+                pbar_sources.set_postfix_str(f"Interrogation {', '.join(jobspy_sites)}...")
+                try:
+                    jobspy_scraper = JobSpyScraper(sites=jobspy_sites, country_indeed="france")
+                    query_term = sector_cfg["default_query"]
+                    js_jobs = jobspy_scraper.search_jobs(
+                        query=query_term,
+                        location=location,
+                        limit=limit_per_source,
+                        hours_old=hours_old,
+                    )
+                    for j in js_jobs:
+                        j["secteur"] = sector_code
+                        j["date_posted"] = str(j.get("date_posted") or target_iso)
+                        src = str(j.get("source", "indeed")).lower()
+                        if src in stats_per_source:
+                            stats_per_source[src] += 1
+                    collected_jobs.extend(js_jobs)
+                    pbar_sources.set_postfix_str(f"JobSpy: {len(js_jobs)} offres")
+                except Exception as e:
+                    logger.error(f"❌ Erreur lors de la collecte JobSpy : {e}")
+                finally:
+                    pbar_sources.update(len(jobspy_sites))
+
+            # 4. Collecte ADZUNA (Optionnelle / Compatibilité)
             if "adzuna" in target_sources:
                 pbar_sources.set_postfix_str("Interrogation Adzuna...")
                 try:
@@ -169,32 +239,6 @@ class DailyJobScraper:
                     logger.error(f"❌ Erreur lors de la collecte Adzuna : {e}")
                 finally:
                     pbar_sources.update(1)
-
-            # 2. Collecte JOBSPY (Indeed / LinkedIn)
-            jobspy_sites = [s for s in target_sources if s in ["indeed", "linkedin"]]
-            if jobspy_sites:
-                pbar_sources.set_postfix_str(f"Interrogation {', '.join(jobspy_sites)}...")
-                try:
-                    jobspy_scraper = JobSpyScraper(sites=jobspy_sites, country_indeed="france")
-                    query_term = sector_cfg["default_query"]
-                    js_jobs = jobspy_scraper.search_jobs(
-                        query=query_term,
-                        location=location,
-                        limit=limit_per_source,
-                        hours_old=hours_old,
-                    )
-                    for j in js_jobs:
-                        j["secteur"] = sector_code
-                        j["date_posted"] = str(j.get("date_posted") or target_iso)
-                        src = str(j.get("source", "indeed")).lower()
-                        if src in stats_per_source:
-                            stats_per_source[src] += 1
-                    collected_jobs.extend(js_jobs)
-                    pbar_sources.set_postfix_str(f"JobSpy: {len(js_jobs)} offres")
-                except Exception as e:
-                    logger.error(f"❌ Erreur lors de la collecte JobSpy : {e}")
-                finally:
-                    pbar_sources.update(len(jobspy_sites))
 
         # ----------------------------------------------------------------------
         # 3. Sauvegarde PostgreSQL & Déduplication Déterministe MD5
@@ -284,7 +328,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scraper Quotidien Multi-Plateformes & Multi-Secteurs (Master 2 IA)")
     parser.add_argument("--sector", "--secteur", default="all", help="Code secteur ou 'all' pour les 8 secteurs")
     parser.add_argument("--limit", type=int, default=10, help="Limite d'offres par plateforme (défaut: 10)")
-    parser.add_argument("--sources", nargs="+", default=["adzuna", "indeed", "linkedin"], help="Sources à scraper")
+    parser.add_argument("--sources", nargs="+", default=["wttj", "hellowork", "indeed", "linkedin"], help="Sources à scraper (wttj, hellowork, indeed, linkedin, adzuna)")
     parser.add_argument("--date", default=None, help="Date cible YYYY-MM-DD (défaut: aujourd'hui)")
 
     args = parser.parse_args()

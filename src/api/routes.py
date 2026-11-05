@@ -202,16 +202,16 @@ def scrape_daily_jobs():
     JSON Body:
     {
       "date": "2026-10-13",             (optionnel, défaut: aujourd'hui)
-      "secteur": "it_data",             (optionnel: it_data, sante_medical, btp_construction...)
-      "sources": ["adzuna", "indeed"], (optionnel: adzuna, indeed, linkedin)
-      "limit_per_source": 15,           (optionnel: défaut 20)
+      "secteur": "it_data",             (optionnel: it_data, sante_medical, btp_construction... ou 'all')
+      "sources": ["wttj", "hellowork"], (optionnel: wttj, hellowork, indeed, linkedin, adzuna)
+      "limit_per_source": 10,           (optionnel: défaut 20)
       "location": "France"              (optionnel)
     }
     """
     data = request.get_json() or {}
     date_str = data.get("date")
     sector_code = data.get("secteur", "it_data")
-    sources = data.get("sources", ["adzuna", "indeed", "linkedin"])
+    sources = data.get("sources", ["wttj", "hellowork", "indeed", "linkedin"])
     limit_per_source = data.get("limit_per_source", 20)
     location = data.get("location", "France")
     auto_enrich = data.get("auto_enrich", data.get("auto_enrich_adzuna", True))
