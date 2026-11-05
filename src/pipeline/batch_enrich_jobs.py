@@ -27,7 +27,8 @@ def run_batch_enrichment(
     batch_size: int = 25,
     sleep_per_job: float = 0.0,
     cooldown_between_batches: float = 0.5,
-    auto_reindex: bool = True
+    auto_reindex: bool = True,
+    force_all: bool = False
 ) -> int:
     """
     Exécute l'enrichissement GLiNER de toutes les offres en attente dans PostgreSQL.
@@ -36,16 +37,21 @@ def run_batch_enrichment(
     :param sleep_per_job: Pause entre offres (0s par défaut car GLiNER est ultra-léger).
     :param cooldown_between_batches: Pause légère après chaque lot (0.5s par défaut).
     :param auto_reindex: Si True, ré-indexe automatiquement ChromaDB à la fin.
+    :param force_all: Si True, ré-enrichit l'intégralité des offres de la base.
     :return: Nombre total d'offres enrichies avec succès.
     """
     db = SessionLocal()
     try:
-        # Sélection de toutes les offres sans compétences renseignées (vides ou 'Non spécifié')
-        pending_jobs = db.query(Offre).filter(
-            (Offre.competences_necessaires == []) |
-            (Offre.competences_necessaires == None) |
-            (Offre.competences_necessaires == ["Non spécifié"])
-        ).order_by(Offre.created_at.desc()).all()
+        if force_all:
+            pending_jobs = db.query(Offre).filter(Offre.is_active == True).order_by(Offre.created_at.desc()).all()
+            logger.info(f"🔄 Mode FORCE-ALL activé : Traitement intégral des {len(pending_jobs)} offres de la base.")
+        else:
+            # Sélection de toutes les offres sans compétences renseignées (vides ou 'Non spécifié')
+            pending_jobs = db.query(Offre).filter(
+                (Offre.competences_necessaires == []) |
+                (Offre.competences_necessaires == None) |
+                (Offre.competences_necessaires == ["Non spécifié"])
+            ).order_by(Offre.created_at.desc()).all()
 
         total_pending = len(pending_jobs)
         if total_pending == 0:
@@ -111,9 +117,20 @@ def run_batch_enrichment(
 
 
 if __name__ == "__main__":
+    import argparse
+
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
+    parser = argparse.ArgumentParser(description="Worker GLiNER Zero-Shot (Hard & Soft Skills)")
+    parser.add_argument("--all", "--force-all", action="store_true", help="Ré-enrichir l'INTÉGRALITÉ des offres de la base")
+    parser.add_argument("--batch-size", type=int, default=25, help="Nombre d'offres par lot")
+    args = parser.parse_args()
+
     run_batch_enrichment(
-        batch_size=25,
+        batch_size=args.batch_size,
         sleep_per_job=0.0,
         cooldown_between_batches=0.5,
-        auto_reindex=True
+        auto_reindex=True,
+        force_all=args.all
     )

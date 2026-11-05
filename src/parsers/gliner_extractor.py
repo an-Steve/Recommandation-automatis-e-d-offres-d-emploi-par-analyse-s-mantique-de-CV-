@@ -145,8 +145,8 @@ class GlinerSkillExtractor:
         self,
         text: str,
         secteur: Optional[str] = "it_data",
-        threshold: float = 0.45,
-        max_chars: int = 1800
+        threshold: float = 0.40,
+        max_chars: int = 1400
     ) -> List[str]:
         """
         Extrait les compétences et outils en appliquant les étiquettes du secteur.
